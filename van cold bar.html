@@ -1,0 +1,2867 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Van’s Cold Bar — Fresh Drink, Happy Mood! | Only 10K</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS SDK v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google Fonts: Plus Jakarta Sans & Fraunces for Editorial Cafe Vibe -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            sage: {
+              50: '#F4F6F1',
+              100: '#E5EAE0',
+              200: '#CBD5C2',
+              300: '#A9B99B',
+              400: '#8A9A5B',
+              500: '#7C9070',
+              600: '#5F7161',
+              700: '#4A594C',
+              800: '#3B473D',
+              900: '#2E3830',
+            },
+            cream: {
+              50: '#FDFBF7',
+              100: '#FAF7F0',
+              200: '#F5F1E9',
+              300: '#EBE3D5',
+              400: '#DDD0BA',
+            },
+            choco: {
+              50: '#F7F3F0',
+              100: '#EDE4DD',
+              200: '#D9C6B8',
+              400: '#8C684F',
+              600: '#5E4431',
+              700: '#4A3525',
+              800: '#3B281E',
+              900: '#261912',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            serif: ['"Fraunces"', 'serif'],
+          },
+          boxShadow: {
+            'soft': '0 10px 40px -10px rgba(74, 53, 37, 0.08)',
+            'card': '0 4px 24px -4px rgba(74, 53, 37, 0.06)',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FAF7F0;
+      color: #3B281E;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-display {
+      font-family: 'Fraunces', serif;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #FAF7F0;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #CBD5C2;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #7C9070;
+    }
+    @keyframes floatSlow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .animate-float {
+      animation: floatSlow 5s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-sage-500 selection:text-white">
+
+  <!-- GLOBAL LOADING OVERLAY -->
+  <div id="loadingOverlay" class="fixed inset-0 z-[100] hidden items-center justify-center bg-choco-900/40 backdrop-blur-sm transition-opacity">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-2xl flex flex-col items-center gap-3">
+      <div class="w-10 h-10 border-4 border-sage-200 border-t-sage-600 rounded-full animate-spin"></div>
+      <p id="loadingText" class="text-sm font-semibold text-choco-800">Memproses...</p>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div id="toastContainer" class="fixed top-20 right-4 z-[90] flex flex-col gap-2.5 max-w-sm w-[calc(100%-2rem)] pointer-events-none"></div>
+
+  <!-- CONFIRMATION MODAL (REPLACES confirm()) -->
+  <div id="confirmModal" class="fixed inset-0 z-[95] hidden items-center justify-center bg-choco-900/50 backdrop-blur-xs p-4">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl max-w-md w-full p-6 shadow-2xl transform transition-all">
+      <div class="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center mb-4">
+        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+      </div>
+      <h3 id="confirmTitle" class="font-display text-xl font-bold text-choco-800 mb-2">Konfirmasi Tindakan</h3>
+      <p id="confirmMessage" class="text-sm text-choco-600 mb-6 leading-relaxed">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+      <div class="flex items-center justify-end gap-3">
+        <button id="confirmCancelBtn" class="px-4 py-2.5 rounded-xl text-sm font-semibold text-choco-700 bg-cream-200 hover:bg-cream-300 transition">Batal</button>
+        <button id="confirmOkBtn" class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-red-600 hover:bg-red-700 transition shadow-sm">Ya, Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IMAGE PREVIEW MODAL (FOR BUKTI BAYAR / QRIS ZOOM) -->
+  <div id="imageModal" class="fixed inset-0 z-[95] hidden items-center justify-center bg-choco-900/80 backdrop-blur-sm p-4" onclick="closeImageModal()">
+    <div class="relative max-w-2xl w-full bg-cream-50 rounded-3xl p-4 shadow-2xl" onclick="event.stopPropagation()">
+      <div class="flex items-center justify-between mb-3 px-2">
+        <h4 id="imageModalTitle" class="font-semibold text-choco-800">Pratinjau Gambar</h4>
+        <button onclick="closeImageModal()" class="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="max-h-[75vh] overflow-auto rounded-2xl bg-cream-200 flex items-center justify-center">
+        <img id="imageModalSrc" src="" alt="Preview" class="max-w-full h-auto object-contain rounded-xl" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- NAVBAR                                                                -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-40 bg-cream-50/90 backdrop-blur-md border-b border-cream-300/80">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <!-- Brand Logo -->
+      <a href="#home" onclick="switchView('store')" class="flex items-center gap-3 group">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sage-600 to-sage-400 text-cream-50 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform">
+          <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8h1a4 4 0 1 1 0 8h-1"/>
+            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+            <path d="M6 2v3"/>
+            <path d="M10 2v3"/>
+            <path d="M14 2v3"/>
+          </svg>
+        </div>
+        <div>
+          <span class="font-display font-bold text-xl sm:text-2xl tracking-tight text-choco-800 block leading-none">Van’s <span class="text-sage-600">Cold Bar</span></span>
+          <span class="text-[11px] font-medium tracking-wider uppercase text-choco-400">Fresh Drink, Happy Mood!</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation -->
+      <nav id="storeNavLinks" class="hidden md:flex items-center gap-7 text-sm font-semibold text-choco-700">
+        <a href="#home" onclick="switchView('store')" class="hover:text-sage-600 transition">Home</a>
+        <a href="#menu" onclick="switchView('store')" class="hover:text-sage-600 transition">Menu</a>
+        <a href="#about" onclick="switchView('store')" class="hover:text-sage-600 transition">About</a>
+        <a href="#contact" onclick="switchView('store')" class="hover:text-sage-600 transition">Contact</a>
+      </nav>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <button onclick="openTrackingModal()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+          <i data-lucide="package-search" class="w-4 h-4 text-sage-600"></i>
+          <span class="hidden sm:inline">Cek Pesanan</span>
+        </button>
+
+        <button id="navAdminBtn" onclick="toggleAdminView()" class="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold border border-choco-200 hover:border-choco-400 text-choco-700 bg-white/70 transition">
+          <i data-lucide="shield-check" class="w-4 h-4 text-choco-600"></i>
+          <span class="hidden sm:inline">Admin</span>
+        </button>
+
+        <button onclick="toggleCartDrawer(true)" class="relative flex items-center gap-2 px-4 py-2.5 rounded-2xl text-sm font-semibold bg-choco-800 hover:bg-choco-700 text-cream-50 shadow-md transition active:scale-95">
+          <i data-lucide="shopping-bag" class="w-4 h-4 text-sage-300"></i>
+          <span class="hidden sm:inline">Keranjang</span>
+          <span id="cartBadge" class="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-bold rounded-full bg-sage-400 text-choco-900">0</span>
+        </button>
+
+        <!-- Mobile Menu Button -->
+        <button onclick="toggleMobileMenu()" class="md:hidden p-2.5 rounded-xl bg-cream-200 text-choco-800">
+          <i data-lucide="menu" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Dropdown Navigation -->
+    <div id="mobileMenu" class="hidden md:hidden border-t border-cream-300 bg-cream-50 px-4 py-3 space-y-2">
+      <a href="#home" onclick="switchView('store'); toggleMobileMenu()" class="block py-2 px-3 rounded-xl font-semibold text-choco-800 hover:bg-cream-200">Home</a>
+      <a href="#menu" onclick="switchView('store'); toggleMobileMenu()" class="block py-2 px-3 rounded-xl font-semibold text-choco-800 hover:bg-cream-200">Menu Minuman</a>
+      <a href="#about" onclick="switchView('store'); toggleMobileMenu()" class="block py-2 px-3 rounded-xl font-semibold text-choco-800 hover:bg-cream-200">About Us</a>
+      <a href="#contact" onclick="switchView('store'); toggleMobileMenu()" class="block py-2 px-3 rounded-xl font-semibold text-choco-800 hover:bg-cream-200">Contact</a>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN STOREFRONT VIEW                                                  -->
+  <!-- ===================================================================== -->
+  <main id="storeView">
+    <!-- HERO SECTION -->
+    <section id="home" class="relative overflow-hidden pt-8 pb-16 sm:pt-14 sm:pb-24">
+      <!-- Decorative Blobs -->
+      <div class="absolute -top-24 -left-24 w-96 h-96 bg-sage-200/40 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute top-32 -right-24 w-96 h-96 bg-choco-200/30 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <!-- Hero Left Copy -->
+          <div class="lg:col-span-6 space-y-6 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-sage-600 text-cream-50 shadow-md">
+              <span class="px-2 py-0.5 text-xs font-extrabold uppercase tracking-wider rounded-full bg-cream-50 text-choco-800">PROMO</span>
+              <span class="text-sm font-bold tracking-wide">ALL DRINKS ONLY 10K!</span>
+            </div>
+
+            <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-choco-800 leading-[1.12] tracking-tight">
+              Your Favorite <span class="text-sage-600 italic">Cold Drinks</span> Are Here!
+            </h1>
+
+            <p class="text-base sm:text-lg text-choco-600 max-w-xl mx-auto lg:mx-0 leading-relaxed">
+              Nikmati kesegaran minuman favoritmu dengan harga ramah di kantong. Semua cuma <strong class="text-choco-800 font-bold">10K!</strong> Dibuat fresh dengan susu creamy pilihan setiap hari.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
+              <a href="#menu" class="w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 font-bold text-base shadow-lg shadow-sage-600/25 transition-all hover:-translate-y-0.5">
+                <span>ORDER NOW</span>
+                <i data-lucide="arrow-right" class="w-5 h-5"></i>
+              </a>
+              <button onclick="openTrackingModal()" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-cream-50 hover:bg-cream-200 border border-cream-300 text-choco-800 font-semibold text-base transition">
+                <i data-lucide="clock" class="w-5 h-5 text-sage-600"></i>
+                <span>Lacak Pesanan</span>
+              </button>
+            </div>
+
+            <!-- Quick Trust Pills -->
+            <div class="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs sm:text-sm font-medium text-choco-600">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-sage-500"></span>
+                <span>100% Susu Segar Creamy</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-choco-600"></span>
+                <span>Pickup & Delivery</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <span>QRIS & Cash / COD</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hero Right Aesthetic Collage (Matcha Milk & Choco Milk) -->
+          <div class="lg:col-span-6">
+            <div class="relative grid grid-cols-2 gap-4 sm:gap-6 max-w-lg mx-auto">
+              <!-- Floating Price Sticker -->
+              <div class="animate-float absolute -top-4 left-1/2 -translate-x-1/2 z-20 bg-choco-800 text-cream-50 px-5 py-2.5 rounded-2xl shadow-xl border-2 border-cream-200 text-center">
+                <span class="block text-[10px] uppercase tracking-widest text-sage-300 font-bold">Flat Price</span>
+                <span class="font-display text-xl sm:text-2xl font-bold">ONLY 10K</span>
+              </div>
+
+              <!-- Matcha Card -->
+              <div class="bg-cream-50 p-3 sm:p-4 rounded-3xl shadow-soft border border-cream-300/80 transform -rotate-2 hover:rotate-0 transition-transform duration-300">
+                <div class="aspect-[3/4] rounded-2xl overflow-hidden bg-sage-100 mb-3">
+                  <img
+                    src="https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=700&q=80"
+                    onerror="this.src='https://placehold.co/600x800/8A9A5B/FFFFFF?text=Matcha+Milk'"
+                    alt="Iced Matcha Milk Van's Cold Bar"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div class="flex items-center justify-between px-1">
+                  <div>
+                    <p class="font-display font-bold text-choco-800 text-sm sm:text-base">Matcha Milk</p>
+                    <p class="text-xs text-sage-600 font-semibold">Signature Green</p>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-xl bg-sage-100 text-sage-700 font-bold text-xs">10K</span>
+                </div>
+              </div>
+
+              <!-- Choco Card -->
+              <div class="bg-cream-50 p-3 sm:p-4 rounded-3xl shadow-soft border border-cream-300/80 transform rotate-2 translate-y-6 hover:rotate-0 transition-transform duration-300">
+                <div class="aspect-[3/4] rounded-2xl overflow-hidden bg-choco-100 mb-3">
+                  <img
+                    src="https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=700&q=80"
+                    onerror="this.src='https://placehold.co/600x800/4A3525/FFFFFF?text=Choco+Milk'"
+                    alt="Iced Choco Milk Van's Cold Bar"
+                    class="w-full h-full object-cover"
+                  />
+                </div>
+                <div class="flex items-center justify-between px-1">
+                  <div>
+                    <p class="font-display font-bold text-choco-800 text-sm sm:text-base">Choco Milk</p>
+                    <p class="text-xs text-choco-600 font-semibold">Rich Cocoa</p>
+                  </div>
+                  <span class="px-2.5 py-1 rounded-xl bg-choco-100 text-choco-800 font-bold text-xs">10K</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KEUNGGULAN PRODUK (WHY VAN'S COLD BAR) -->
+    <section class="py-12 bg-cream-50 border-y border-cream-300/70">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div class="p-6 rounded-3xl bg-cream-100/80 border border-cream-300/60 flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-sage-100 text-sage-700 flex items-center justify-center shrink-0">
+              <i data-lucide="leaf" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-choco-800 text-base">Bahan Premium</h3>
+              <p class="text-xs sm:text-sm text-choco-600 mt-1">Bubuk matcha autentik & cokelat pilihan berkualitas tinggi.</p>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-cream-100/80 border border-cream-300/60 flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0">
+              <i data-lucide="milk" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-choco-800 text-base">Susu Creamy Segar</h3>
+              <p class="text-xs sm:text-sm text-choco-600 mt-1">Tekstur lembut, gurih, dan manis yang pas di setiap tegukan.</p>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-cream-100/80 border border-cream-300/60 flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-choco-100 text-choco-800 flex items-center justify-center shrink-0">
+              <i data-lucide="tag" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-choco-800 text-base">Harga Ramah 10K</h3>
+              <p class="text-xs sm:text-sm text-choco-600 mt-1">Rasa kualitas cafe modern tanpa bikin dompet tipis.</p>
+            </div>
+          </div>
+
+          <div class="p-6 rounded-3xl bg-cream-100/80 border border-cream-300/60 flex items-start gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
+              <i data-lucide="sparkles" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-choco-800 text-base">Dibuat Fresh</h3>
+              <p class="text-xs sm:text-sm text-choco-600 mt-1">Diracik higienis saat pesanan masuk agar selalu segar dingin.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- MENU & BEST SELLER SECTION -->
+    <section id="menu" class="py-16 sm:py-24">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-12 space-y-3">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-sage-100 text-sage-700 text-xs font-bold uppercase tracking-wider">
+            <i data-lucide="flame" class="w-3.5 h-3.5"></i> Best Seller Menu
+          </span>
+          <h2 class="font-display text-3xl sm:text-4xl font-bold text-choco-800">Pilih Kesegaran Favoritmu</h2>
+          <p class="text-sm sm:text-base text-choco-600">Semua minuman diracik fresh dengan takaran pas. Pilih jumlahnya dan pesan sekarang!</p>
+        </div>
+
+        <!-- Product Grid (Rendered Dynamically from Store State) -->
+        <div id="productGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <!-- Cards injected by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ABOUT VAN'S COLD BAR -->
+    <section id="about" class="py-16 sm:py-20 bg-sage-800 text-cream-50 relative overflow-hidden">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+          <div class="lg:col-span-5">
+            <div class="rounded-3xl overflow-hidden shadow-2xl border-4 border-sage-600/50 aspect-[4/3]">
+              <img
+                src="https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=900&q=80"
+                onerror="this.src='https://placehold.co/800x600/5F7161/FFFFFF?text=Van%27s+Cold+Bar'"
+                alt="Tentang Van's Cold Bar"
+                class="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+          <div class="lg:col-span-7 space-y-5">
+            <span class="inline-block px-3.5 py-1 rounded-full bg-sage-600 text-cream-100 text-xs font-bold uppercase tracking-wider">Tentang Kami</span>
+            <h2 class="font-display text-3xl sm:text-4xl font-bold leading-tight">
+              Hadir Membawa Kebahagiaan di Setiap Tegukan Dingin.
+            </h2>
+            <p class="text-cream-200 text-sm sm:text-base leading-relaxed">
+              <strong>Van’s Cold Bar</strong> lahir dari kecintaan kami terhadap minuman cafe kekinian yang nikmat namun tetap ramah di kantong semua kalangan. Dengan tagline <em>"Fresh Drink, Happy Mood!"</em>, kami percaya segelas Matcha Milk yang earthy maupun Choco Milk yang rich mampu mengembalikan semangat harimu hanya dengan <strong>Rp10.000</strong>.
+            </p>
+            <div class="grid grid-cols-3 gap-4 pt-3 border-t border-sage-700">
+              <div>
+                <p class="font-display text-2xl sm:text-3xl font-bold text-sage-300">10K</p>
+                <p class="text-xs text-cream-300">Harga Bersahabat</p>
+              </div>
+              <div>
+                <p class="font-display text-2xl sm:text-3xl font-bold text-sage-300">100%</p>
+                <p class="text-xs text-cream-300">Freshly Made</p>
+              </div>
+              <div>
+                <p class="font-display text-2xl sm:text-3xl font-bold text-sage-300">4.9★</p>
+                <p class="text-xs text-cream-300">Kepuasan Pelanggan</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TESTIMONI PELANGGAN -->
+    <section class="py-16 sm:py-20">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-xl mx-auto mb-12">
+          <span class="text-xs font-bold uppercase tracking-wider text-sage-600">Apa Kata Mereka?</span>
+          <h2 class="font-display text-3xl font-bold text-choco-800 mt-1">Favorit Banyak Pelanggan</h2>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="bg-cream-50 p-6 rounded-3xl border border-cream-300 shadow-card space-y-4">
+            <div class="flex items-center gap-1 text-amber-500">
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+            </div>
+            <p class="text-sm text-choco-700 leading-relaxed">"Matcha Milk-nya wangi banget dan creamy! Nggak nyangka harganya cuma 10 ribu tapi rasanya kayak minuman cafe 25 ribuan."</p>
+            <div class="flex items-center gap-3 pt-2">
+              <div class="w-9 h-9 rounded-full bg-sage-200 text-sage-800 font-bold text-xs flex items-center justify-center">AN</div>
+              <div>
+                <p class="text-sm font-bold text-choco-800">Alya Nabila</p>
+                <p class="text-xs text-choco-400">Mahasiswi</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-cream-50 p-6 rounded-3xl border border-cream-300 shadow-card space-y-4">
+            <div class="flex items-center gap-1 text-amber-500">
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+            </div>
+            <p class="text-sm text-choco-700 leading-relaxed">"Choco Milk favoritku tiap siang! Cokelatnya pekat, nggak bikin enek, terus order lewat web-nya gampang banget bisa QRIS atau COD."</p>
+            <div class="flex items-center gap-3 pt-2">
+              <div class="w-9 h-9 rounded-full bg-choco-200 text-choco-800 font-bold text-xs flex items-center justify-center">RP</div>
+              <div>
+                <p class="text-sm font-bold text-choco-800">Rizky Pratama</p>
+                <p class="text-xs text-choco-400">Karyawan Swasta</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-cream-50 p-6 rounded-3xl border border-cream-300 shadow-card space-y-4">
+            <div class="flex items-center gap-1 text-amber-500">
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+              <i data-lucide="star" class="w-4 h-4 fill-current"></i>
+            </div>
+            <p class="text-sm text-choco-700 leading-relaxed">"Sering beli paketan 2 Matcha + 1 Choco buat temen kerja. Pelayanannya cepat dan status pesanannya bisa dipantau langsung."</p>
+            <div class="flex items-center gap-3 pt-2">
+              <div class="w-9 h-9 rounded-full bg-amber-200 text-amber-900 font-bold text-xs flex items-center justify-center">DP</div>
+              <div>
+                <p class="text-sm font-bold text-choco-800">Dinda Putri</p>
+                <p class="text-xs text-choco-400">Pelanggan Setia</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTACT & FOOTER -->
+    <footer id="contact" class="bg-choco-800 text-cream-200 pt-14 pb-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-10 pb-10 border-b border-choco-700">
+          <div class="space-y-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-sage-500 text-cream-50 flex items-center justify-center">
+                <i data-lucide="cup-soda" class="w-5 h-5"></i>
+              </div>
+              <span class="font-display text-2xl font-bold text-cream-50">Van’s Cold Bar</span>
+            </div>
+            <p class="text-sm text-cream-300 leading-relaxed">
+              Fresh Drink, Happy Mood! Menyajikan Matcha Milk dan Choco Milk premium dengan harga cuma 10K.
+            </p>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-bold text-cream-50 text-base">Jam Operasional & Layanan</h4>
+            <ul class="text-sm text-cream-300 space-y-2">
+              <li class="flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-sage-400"></i> Setiap Hari: 10.00 – 21.00 WIB</li>
+              <li class="flex items-center gap-2"><i data-lucide="shopping-bag" class="w-4 h-4 text-sage-400"></i> Tersedia Pickup & Delivery</li>
+              <li class="flex items-center gap-2"><i data-lucide="credit-card" class="w-4 h-4 text-sage-400"></i> Pembayaran QRIS & Cash / COD</li>
+            </ul>
+          </div>
+
+          <div class="space-y-3">
+            <h4 class="font-bold text-cream-50 text-base">Hubungi Kami</h4>
+            <p class="text-sm text-cream-300">Punya pertanyaan atau pesanan jumlah banyak untuk acara? Hubungi WhatsApp resmi kami:</p>
+            <button onclick="openDirectWhatsApp()" class="inline-flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm transition shadow-md">
+              <i data-lucide="message-circle" class="w-4 h-4"></i>
+              <span>Chat WhatsApp (<span id="footerWaDisplay">6281234567890</span>)</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-cream-400">
+          <p>&copy; 2026 Van’s Cold Bar. All rights reserved.</p>
+          <div class="flex items-center gap-4">
+            <button onclick="openTrackingModal()" class="hover:text-cream-100 transition">Lacak Pesanan</button>
+            <span>•</span>
+            <button onclick="toggleAdminView()" class="hover:text-cream-100 transition">Admin Dashboard</button>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- ADMIN VIEW (LOGIN + FULL DASHBOARD)                                   -->
+  <!-- ===================================================================== -->
+  <section id="adminView" class="hidden min-h-[calc(100vh-5rem)] py-8 sm:py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- ADMIN LOGIN CARD -->
+      <div id="adminLoginBox" class="max-w-md mx-auto bg-cream-50 border border-cream-300 rounded-3xl p-8 shadow-soft">
+        <div class="text-center space-y-2 mb-6">
+          <div class="w-14 h-14 rounded-2xl bg-sage-600 text-cream-50 flex items-center justify-center mx-auto shadow-md">
+            <i data-lucide="lock" class="w-7 h-7"></i>
+          </div>
+          <h2 class="font-display text-2xl font-bold text-choco-800">Admin Dashboard</h2>
+          <p class="text-xs sm:text-sm text-choco-600">Masuk untuk mengelola pesanan, verifikasi QRIS, produk, dan pengaturan toko.</p>
+        </div>
+
+        <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Email Admin</label>
+            <input id="adminEmailInput" type="email" required placeholder="admin@vanscoldbar.com" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Password</label>
+            <input id="adminPassInput" type="password" required placeholder="••••••••" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm" />
+          </div>
+
+          <div class="p-3.5 rounded-2xl bg-sage-50 border border-sage-200 text-xs text-sage-800 space-y-1">
+            <p class="font-bold flex items-center gap-1.5"><i data-lucide="info" class="w-3.5 h-3.5"></i> Info Login Pengujian Lokal:</p>
+            <p>Email: <code class="font-mono font-bold">admin@vanscoldbar.com</code></p>
+            <p>Password: <code class="font-mono font-bold">admin123</code></p>
+            <p class="text-[11px] text-sage-600 pt-0.5">*Jika Supabase Auth aktif, gunakan akun dari tabel/Auth Supabase Anda.</p>
+          </div>
+
+          <button type="submit" class="w-full py-3.5 rounded-2xl bg-choco-800 hover:bg-choco-700 text-cream-50 font-bold text-sm shadow-md transition">
+            Masuk ke Dashboard
+          </button>
+          <button type="button" onclick="switchView('store')" class="w-full py-2.5 rounded-2xl text-xs font-semibold text-choco-600 hover:bg-cream-200 transition">
+            ← Kembali ke Toko
+          </button>
+        </form>
+      </div>
+
+      <!-- ADMIN DASHBOARD CONTENT -->
+      <div id="adminDashboardContent" class="hidden space-y-8">
+        <!-- Dashboard Top Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card">
+          <div>
+            <div class="flex items-center gap-2.5">
+              <h1 class="font-display text-2xl sm:text-3xl font-bold text-choco-800">Dashboard Van’s Cold Bar</h1>
+              <span id="dbModeBadge" class="px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800">LocalStorage Mode</span>
+            </div>
+            <p class="text-xs sm:text-sm text-choco-600 mt-1">Kelola pesanan real-time, verifikasi pembayaran QRIS, stok minuman, dan pengaturan toko.</p>
+          </div>
+          <div class="flex items-center gap-2.5">
+            <button onclick="switchView('store')" class="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+              Lihat Toko
+            </button>
+            <button onclick="handleAdminLogout()" class="px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold bg-red-100 hover:bg-red-200 text-red-700 transition">
+              Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Stats Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div class="bg-cream-50 border border-cream-300 rounded-3xl p-5 shadow-card">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-choco-500">Total Pendapatan</span>
+              <div class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center"><i data-lucide="wallet" class="w-4 h-4"></i></div>
+            </div>
+            <p id="statRevenue" class="font-display text-2xl font-bold text-choco-800 mt-3">Rp0</p>
+            <p class="text-xs text-choco-500 mt-1">Dari pesanan terverifikasi/selesai</p>
+          </div>
+
+          <div class="bg-cream-50 border border-cream-300 rounded-3xl p-5 shadow-card">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-choco-500">Pesanan Masuk</span>
+              <div class="w-9 h-9 rounded-xl bg-sage-100 text-sage-700 flex items-center justify-center"><i data-lucide="shopping-bag" class="w-4 h-4"></i></div>
+            </div>
+            <p id="statTotalOrders" class="font-display text-2xl font-bold text-choco-800 mt-3">0</p>
+            <p class="text-xs text-choco-500 mt-1">Total seluruh transaksi</p>
+          </div>
+
+          <div class="bg-cream-50 border border-cream-300 rounded-3xl p-5 shadow-card">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-choco-500">Perlu Verifikasi QRIS</span>
+              <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center"><i data-lucide="qr-code" class="w-4 h-4"></i></div>
+            </div>
+            <p id="statPendingVerify" class="font-display text-2xl font-bold text-amber-700 mt-3">0</p>
+            <p class="text-xs text-choco-500 mt-1">Menunggu pengecekan bukti bayar</p>
+          </div>
+
+          <div class="bg-cream-50 border border-cream-300 rounded-3xl p-5 shadow-card">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-choco-500">Total Stok Minuman</span>
+              <div class="w-9 h-9 rounded-xl bg-choco-100 text-choco-700 flex items-center justify-center"><i data-lucide="cup-soda" class="w-4 h-4"></i></div>
+            </div>
+            <p id="statTotalStock" class="font-display text-2xl font-bold text-choco-800 mt-3">0 Cup</p>
+            <p class="text-xs text-choco-500 mt-1">Akumulasi seluruh varian menu</p>
+          </div>
+        </div>
+
+        <!-- Admin Navigation Tabs -->
+        <div class="flex flex-wrap gap-2 border-b border-cream-300 pb-3">
+          <button onclick="switchAdminTab('orders')" id="tabBtn-orders" class="admin-tab-btn px-4 py-2.5 rounded-2xl text-sm font-bold bg-choco-800 text-cream-50 transition">
+            Pesanan & Verifikasi QRIS
+          </button>
+          <button onclick="switchAdminTab('products')" id="tabBtn-products" class="admin-tab-btn px-4 py-2.5 rounded-2xl text-sm font-bold bg-cream-200 text-choco-700 hover:bg-cream-300 transition">
+            Kelola Produk & Stok
+          </button>
+          <button onclick="switchAdminTab('settings')" id="tabBtn-settings" class="admin-tab-btn px-4 py-2.5 rounded-2xl text-sm font-bold bg-cream-200 text-choco-700 hover:bg-cream-300 transition">
+            Pengaturan QRIS & WhatsApp
+          </button>
+          <button onclick="switchAdminTab('supabase')" id="tabBtn-supabase" class="admin-tab-btn px-4 py-2.5 rounded-2xl text-sm font-bold bg-cream-200 text-choco-700 hover:bg-cream-300 transition">
+            Database Supabase & SQL Schema
+          </button>
+        </div>
+
+        <!-- TAB 1: ORDERS & QRIS VERIFICATION -->
+        <div id="adminTab-orders" class="space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h2 class="font-display text-xl font-bold text-choco-800">Daftar Pesanan & Riwayat Transaksi</h2>
+            <select id="adminOrderFilter" onchange="renderAdminOrders()" class="px-4 py-2 rounded-xl bg-cream-50 border border-cream-300 text-sm font-semibold text-choco-800">
+              <option value="ALL">Semua Status Pesanan</option>
+              <option value="Menunggu Pembayaran">Menunggu Pembayaran</option>
+              <option value="Menunggu Verifikasi">Menunggu Verifikasi (QRIS)</option>
+              <option value="Pembayaran Berhasil">Pembayaran Berhasil</option>
+              <option value="Pesanan Diproses">Pesanan Diproses</option>
+              <option value="Siap Diambil">Siap Diambil</option>
+              <option value="Sedang Diantar">Sedang Diantar</option>
+              <option value="Pesanan Selesai">Pesanan Selesai</option>
+            </select>
+          </div>
+
+          <div id="adminOrdersList" class="space-y-4">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- TAB 2: MANAGE PRODUCTS & STOCK -->
+        <div id="adminTab-products" class="hidden space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 class="font-display text-xl font-bold text-choco-800">Kelola Menu, Harga & Stok</h2>
+              <p class="text-xs text-choco-600">Ubah harga, stok tersedia, atau unggah foto produk baru.</p>
+            </div>
+            <button onclick="openAddProductModal()" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 text-sm font-bold shadow-sm transition">
+              <i data-lucide="plus" class="w-4 h-4"></i> Tambah Menu Baru
+            </button>
+          </div>
+
+          <div id="adminProductsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- TAB 3: STORE SETTINGS (QRIS UPLOAD & WHATSAPP) -->
+        <div id="adminTab-settings" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- QRIS Upload Card -->
+          <div class="bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card space-y-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-sage-100 text-sage-700 flex items-center justify-center">
+                <i data-lucide="qr-code" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-display text-lg font-bold text-choco-800">Gambar QRIS Asli Penjual</h3>
+                <p class="text-xs text-choco-600">Unggah kode QRIS resmi toko Anda agar tampil saat pelanggan checkout.</p>
+              </div>
+            </div>
+
+            <div class="p-4 rounded-2xl bg-cream-100 border border-dashed border-cream-400 flex flex-col items-center justify-center text-center min-h-[240px]">
+              <img id="adminQrisPreview" src="" alt="QRIS Toko" class="hidden max-h-56 rounded-xl shadow-sm mb-3 cursor-pointer" onclick="openImageModal(this.src, 'QRIS Resmi Van’s Cold Bar')" />
+              <div id="adminQrisEmpty" class="space-y-2 py-6">
+                <i data-lucide="image-plus" class="w-10 h-10 text-choco-400 mx-auto"></i>
+                <p class="text-sm font-semibold text-choco-700">Belum ada gambar QRIS diunggah</p>
+                <p class="text-xs text-choco-500 max-w-xs">Unggah file PNG/JPG QRIS resmi merchant Anda (GoPay, OVO, Dana, ShopeePay, BCA, dll).</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-3">
+              <label class="flex-1 cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-choco-800 hover:bg-choco-700 text-cream-50 text-sm font-bold transition">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Unggah Gambar QRIS</span>
+                <input type="file" accept="image/*" class="hidden" onchange="handleQrisUpload(event)" />
+              </label>
+              <button id="removeQrisBtn" onclick="removeQrisImage()" class="hidden px-4 py-3 rounded-2xl bg-red-100 hover:bg-red-200 text-red-700 text-sm font-bold transition">
+                Hapus QRIS
+              </button>
+            </div>
+          </div>
+
+          <!-- WhatsApp & Payment Gateway Info Card -->
+          <div class="space-y-6">
+            <div class="bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card space-y-4">
+              <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                  <i data-lucide="phone" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="font-display text-lg font-bold text-choco-800">Nomor WhatsApp Admin</h3>
+                  <p class="text-xs text-choco-600">Format internasional tanpa tanda + (contoh: 6281234567890).</p>
+                </div>
+              </div>
+
+              <div class="space-y-3">
+                <input id="adminWaInput" type="text" placeholder="6281234567890" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm font-mono" />
+                <button onclick="saveWhatsAppSetting()" class="w-full py-3 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 font-bold text-sm transition">
+                  Simpan Nomor WhatsApp
+                </button>
+              </div>
+            </div>
+
+            <!-- Payment Gateway Integration Guide -->
+            <div class="bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card space-y-2.5">
+              <h4 class="font-bold text-choco-800 text-sm flex items-center gap-2">
+                <i data-lucide="shield-alert" class="w-4 h-4 text-amber-600"></i>
+                Ingin Verifikasi QRIS Otomatis (Midtrans / Xendit)?
+              </h4>
+              <p class="text-xs text-choco-600 leading-relaxed">
+                Saat ini website menggunakan <strong>QRIS Statis Asli + Verifikasi Manual Bukti Transfer</strong> yang aman tanpa backend server. Jika ingin verifikasi otomatis secara real-time, hubungkan API <strong>Midtrans Snap</strong> atau <strong>Xendit QRIS</strong> melalui Supabase Edge Functions / Webhook server Anda (jangan pernah meletakkan Server Key / Secret Key di kode frontend).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: SUPABASE CONFIG & SQL SCHEMA -->
+        <div id="adminTab-supabase" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div class="lg:col-span-5 bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card space-y-4 h-fit">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                <i data-lucide="database" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <h3 class="font-display text-lg font-bold text-choco-800">Koneksi Supabase</h3>
+                <p class="text-xs text-choco-600">Hubungkan ke project Supabase Anda untuk database real-time.</p>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
+              <p class="font-bold">Keamanan API Key:</p>
+              <p>Hanya masukkan <strong>Project URL</strong> dan <strong>Anon Public Key</strong>. JANGAN pernah memasukkan <code class="font-mono">service_role</code> secret key di frontend.</p>
+            </div>
+
+            <div class="space-y-3">
+              <div>
+                <label class="block text-xs font-bold text-choco-700 mb-1">SUPABASE_URL</label>
+                <input id="sbUrlInput" type="url" placeholder="https://xxxx.supabase.co" class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs font-mono" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-choco-700 mb-1">SUPABASE_ANON_KEY</label>
+                <input id="sbAnonInput" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..." class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-xs font-mono" />
+              </div>
+              <div class="flex gap-2 pt-1">
+                <button onclick="saveSupabaseConfig()" class="flex-1 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-cream-50 text-xs font-bold transition">
+                  Simpan & Hubungkan
+                </button>
+                <button onclick="disconnectSupabase()" class="px-3.5 py-2.5 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-700 text-xs font-bold transition">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="lg:col-span-7 bg-cream-50 border border-cream-300 rounded-3xl p-6 shadow-card space-y-4">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <h3 class="font-display text-lg font-bold text-choco-800">SQL Schema & Row Level Security (RLS)</h3>
+                <p class="text-xs text-choco-600">Salin dan jalankan skrip SQL berikut di <strong>Supabase SQL Editor</strong>.</p>
+              </div>
+              <button onclick="copySqlSchema()" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-choco-800 hover:bg-choco-700 text-cream-50 text-xs font-bold transition">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Salin SQL
+              </button>
+            </div>
+
+            <pre id="supabaseSqlCode" class="p-4 rounded-2xl bg-choco-900 text-cream-100 text-[11px] font-mono overflow-x-auto max-h-[420px] leading-relaxed select-all">-- 1. TABEL PRODUCTS
+CREATE TABLE IF NOT EXISTS products (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  description TEXT,
+  price INTEGER NOT NULL DEFAULT 10000,
+  stock INTEGER NOT NULL DEFAULT 50,
+  image_url TEXT,
+  is_best_seller BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. TABEL ORDERS
+CREATE TABLE IF NOT EXISTS orders (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_number TEXT UNIQUE NOT NULL,
+  customer_name TEXT NOT NULL,
+  customer_whatsapp TEXT NOT NULL,
+  delivery_method TEXT NOT NULL CHECK (delivery_method IN ('Delivery', 'Pickup')),
+  delivery_address TEXT,
+  notes TEXT,
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('QRIS', 'CASH')),
+  total_amount INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Menunggu Pembayaran',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. TABEL ORDER_ITEMS
+CREATE TABLE IF NOT EXISTS order_items (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  product_id TEXT REFERENCES products(id),
+  product_name TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  quantity INTEGER NOT NULL,
+  subtotal INTEGER NOT NULL
+);
+
+-- 4. TABEL PAYMENTS
+CREATE TABLE IF NOT EXISTS payments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+  payment_method TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  proof_url TEXT,
+  status TEXT NOT NULL DEFAULT 'Menunggu Pembayaran',
+  verified_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. TABEL ADMIN_USERS & STORE_SETTINGS
+CREATE TABLE IF NOT EXISTS admin_users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT UNIQUE NOT NULL,
+  role TEXT DEFAULT 'admin',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- AKTIFKAN ROW LEVEL SECURITY (RLS)
+ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
+
+-- POLICIES: Publik dapat melihat produk & membuat pesanan baru
+CREATE POLICY "Public read products" ON products FOR SELECT USING (true);
+CREATE POLICY "Admin manage products" ON products FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Public insert orders" ON orders FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public read own order by number" ON orders FOR SELECT USING (true);
+CREATE POLICY "Admin update/delete orders" ON orders FOR ALL USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Public insert order_items" ON order_items FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public read order_items" ON order_items FOR SELECT USING (true);
+
+CREATE POLICY "Public insert/update payments" ON payments FOR ALL USING (true);
+CREATE POLICY "Admin read admin_users" ON admin_users FOR SELECT USING (auth.uid() = id);</pre>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- SLIDE-OVER SHOPPING CART DRAWER                                       -->
+  <!-- ===================================================================== -->
+  <div id="cartDrawerOverlay" class="fixed inset-0 z-50 hidden bg-choco-900/50 backdrop-blur-xs transition-opacity" onclick="toggleCartDrawer(false)"></div>
+  <aside id="cartDrawer" class="fixed top-0 right-0 z-50 h-full w-full max-w-md bg-cream-50 shadow-2xl border-l border-cream-300 transform translate-x-full transition-transform duration-300 flex flex-col">
+    <!-- Cart Header -->
+    <div class="p-6 border-b border-cream-300 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <i data-lucide="shopping-bag" class="w-5 h-5 text-sage-600"></i>
+        <h3 class="font-display text-xl font-bold text-choco-800">Keranjang Belanja</h3>
+      </div>
+      <button onclick="toggleCartDrawer(false)" class="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+
+    <!-- Cart Body -->
+    <div id="cartItemsContainer" class="flex-1 overflow-y-auto p-6 space-y-4">
+      <!-- Items or Empty Cart SVG rendered by JS -->
+    </div>
+
+    <!-- Cart Footer -->
+    <div id="cartFooter" class="p-6 border-t border-cream-300 bg-cream-100 space-y-4 hidden">
+      <div class="space-y-1.5 text-sm">
+        <div class="flex justify-between text-choco-600">
+          <span>Subtotal (<span id="cartTotalQty">0</span> item)</span>
+          <span id="cartSubtotalText" class="font-semibold">Rp0</span>
+        </div>
+        <div class="flex justify-between text-choco-800 text-base font-bold pt-2 border-t border-cream-300">
+          <span>Total Pembayaran</span>
+          <span id="cartTotalText" class="text-sage-700 text-lg">Rp0</span>
+        </div>
+      </div>
+      <button onclick="openCheckoutModal()" class="w-full py-4 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+        <span>Lanjut ke Checkout</span>
+        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+      </button>
+    </div>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- CHECKOUT MODAL (FORM + QRIS / CASH PAYMENT)                           -->
+  <!-- ===================================================================== -->
+  <div id="checkoutModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-choco-900/60 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl max-w-3xl w-full my-auto shadow-2xl overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-cream-300 flex items-center justify-between bg-cream-100">
+        <div>
+          <h3 class="font-display text-xl sm:text-2xl font-bold text-choco-800">Checkout Pesanan</h3>
+          <p class="text-xs text-choco-600">Periksa kembali pesanan Anda dan pilih metode pembayaran.</p>
+        </div>
+        <button onclick="closeCheckoutModal()" class="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="checkoutForm" onsubmit="submitCheckoutOrder(event)" class="p-5 sm:p-6 space-y-6 max-h-[82vh] overflow-y-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <!-- Left Form Fields -->
+          <div class="lg:col-span-7 space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Nama Lengkap *</label>
+              <input id="chkName" type="text" required placeholder="Contoh: Nadya Putri" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm" />
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Nomor WhatsApp *</label>
+              <input id="chkWhatsapp" type="tel" required placeholder="Contoh: 081234567890" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm" />
+            </div>
+
+            <!-- Delivery or Pickup -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Pilihan Pengambilan *</label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="cursor-pointer">
+                  <input type="radio" name="deliveryMethod" value="Pickup" checked onchange="onDeliveryMethodChange()" class="peer hidden" />
+                  <div class="p-3.5 rounded-2xl border-2 border-cream-300 bg-white peer-checked:border-sage-600 peer-checked:bg-sage-50 transition text-center">
+                    <i data-lucide="store" class="w-5 h-5 mx-auto mb-1 text-sage-600"></i>
+                    <span class="block text-sm font-bold text-choco-800">Pickup</span>
+                    <span class="block text-[11px] text-choco-500">Ambil di Outlet</span>
+                  </div>
+                </label>
+
+                <label class="cursor-pointer">
+                  <input type="radio" name="deliveryMethod" value="Delivery" onchange="onDeliveryMethodChange()" class="peer hidden" />
+                  <div class="p-3.5 rounded-2xl border-2 border-cream-300 bg-white peer-checked:border-sage-600 peer-checked:bg-sage-50 transition text-center">
+                    <i data-lucide="bike" class="w-5 h-5 mx-auto mb-1 text-sage-600"></i>
+                    <span class="block text-sm font-bold text-choco-800">Delivery</span>
+                    <span class="block text-[11px] text-choco-500">Antar ke Alamat</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Address (Shown if Delivery) -->
+            <div id="chkAddressWrapper" class="hidden">
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Alamat Lengkap Pengiriman *</label>
+              <textarea id="chkAddress" rows="2" placeholder="Nama jalan, nomor rumah, patokan..." class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700 mb-1.5">Catatan Pesanan (Opsional)</label>
+              <input id="chkNotes" type="text" placeholder="Contoh: Es normal / less sugar / tanpa sedotan" class="w-full px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm" />
+            </div>
+          </div>
+
+          <!-- Right Summary & Payment Method -->
+          <div class="lg:col-span-5 space-y-4">
+            <!-- Order Summary Box -->
+            <div class="p-4 rounded-2xl bg-cream-100 border border-cream-300 space-y-3">
+              <h4 class="font-bold text-sm text-choco-800 flex items-center gap-2">
+                <i data-lucide="receipt" class="w-4 h-4 text-sage-600"></i> Ringkasan Belanja
+              </h4>
+              <div id="chkSummaryItems" class="space-y-2 text-xs text-choco-700 max-h-36 overflow-y-auto pr-1">
+                <!-- Items injected -->
+              </div>
+              <div class="pt-2 border-t border-cream-300 flex items-center justify-between font-bold text-choco-800">
+                <span class="text-sm">Total Bayar</span>
+                <span id="chkTotalAmount" class="text-lg text-sage-700">Rp0</span>
+              </div>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="space-y-2.5">
+              <label class="block text-xs font-bold uppercase tracking-wider text-choco-700">Metode Pembayaran *</label>
+              <div class="grid grid-cols-2 gap-2.5">
+                <label class="cursor-pointer">
+                  <input type="radio" name="paymentMethod" value="QRIS" checked onchange="onPaymentMethodChange()" class="peer hidden" />
+                  <div class="p-3 rounded-2xl border-2 border-cream-300 bg-white peer-checked:border-sage-600 peer-checked:bg-sage-50 transition text-center">
+                    <span class="block text-sm font-bold text-choco-800">QRIS</span>
+                    <span class="block text-[10px] text-choco-500">Scan & Upload Bukti</span>
+                  </div>
+                </label>
+
+                <label class="cursor-pointer">
+                  <input type="radio" name="paymentMethod" value="CASH" onchange="onPaymentMethodChange()" class="peer hidden" />
+                  <div class="p-3 rounded-2xl border-2 border-cream-300 bg-white peer-checked:border-sage-600 peer-checked:bg-sage-50 transition text-center">
+                    <span class="block text-sm font-bold text-choco-800">CASH</span>
+                    <span class="block text-[10px] text-choco-500">Tunai / COD</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- METODE A: QRIS PANEL -->
+            <div id="paymentQrisPanel" class="p-4 rounded-2xl bg-white border border-cream-300 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-choco-800">Scan QRIS Resmi Toko</span>
+                <button type="button" onclick="copyCheckoutNominal()" class="text-[11px] font-bold text-sage-600 hover:underline flex items-center gap-1">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Salin Nominal
+                </button>
+              </div>
+
+              <!-- Real Merchant QRIS Display -->
+              <div id="chkQrisImageBox" class="rounded-xl bg-cream-100 p-3 flex flex-col items-center justify-center text-center border border-cream-300">
+                <img id="chkQrisImg" src="" alt="QRIS Van's Cold Bar" class="hidden max-h-48 rounded-lg cursor-pointer" onclick="openImageModal(this.src, 'QRIS Van’s Cold Bar')" />
+                <div id="chkQrisNotUploaded" class="py-4 px-2 space-y-1.5">
+                  <i data-lucide="qr-code" class="w-8 h-8 text-amber-600 mx-auto"></i>
+                  <p class="text-xs font-bold text-choco-800">QRIS Belum Diunggah oleh Admin</p>
+                  <p class="text-[11px] text-choco-600 leading-snug">Admin dapat mengunggah gambar QRIS asli toko di menu <strong>Admin → Pengaturan QRIS</strong>. Anda tetap bisa lanjut atau pilih CASH.</p>
+                </div>
+              </div>
+
+              <!-- Upload Proof of Payment -->
+              <div class="space-y-2">
+                <label class="block text-xs font-bold text-choco-700">Upload Bukti Pembayaran QRIS</label>
+                <label class="cursor-pointer flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl border border-dashed border-sage-500 bg-sage-50/70 hover:bg-sage-100 text-sage-800 text-xs font-bold transition">
+                  <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                  <span id="chkProofFileName">Pilih Foto Bukti Transfer</span>
+                  <input id="chkProofInput" type="file" accept="image/*" class="hidden" onchange="handleCheckoutProofUpload(event)" />
+                </label>
+                <div id="chkProofPreviewWrap" class="hidden relative rounded-xl overflow-hidden border border-cream-300">
+                  <img id="chkProofPreviewImg" src="" alt="Bukti Bayar" class="w-full h-28 object-cover" />
+                  <button type="button" onclick="clearCheckoutProof()" class="absolute top-1.5 right-1.5 px-2 py-1 rounded-lg bg-red-600 text-white text-[10px] font-bold">Hapus</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- METODE B: CASH PANEL -->
+            <div id="paymentCashPanel" class="hidden p-4 rounded-2xl bg-amber-50/80 border border-amber-200 space-y-1.5">
+              <p class="text-xs font-bold text-choco-800 flex items-center gap-1.5">
+                <i data-lucide="banknote" class="w-4 h-4 text-emerald-700"></i> Pembayaran Tunai (CASH)
+              </p>
+              <p id="cashInstructionText" class="text-xs text-choco-700 leading-relaxed">
+                Silakan siapkan uang pas dan lakukan pembayaran tunai saat mengambil pesanan di outlet Van’s Cold Bar.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="pt-4 border-t border-cream-300 flex flex-col sm:flex-row items-center justify-end gap-3">
+          <button type="button" onclick="closeCheckoutModal()" class="w-full sm:w-auto px-5 py-3 rounded-2xl text-sm font-semibold text-choco-700 bg-cream-200 hover:bg-cream-300 transition">
+            Kembali
+          </button>
+          <button type="submit" class="w-full sm:w-auto px-8 py-3.5 rounded-2xl text-sm font-bold text-cream-50 bg-sage-600 hover:bg-sage-700 shadow-lg transition flex items-center justify-center gap-2">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            <span>Konfirmasi & Buat Pesanan</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- ORDER SUCCESS MODAL + WHATSAPP AUTO FORMAT                            -->
+  <!-- ===================================================================== -->
+  <div id="orderSuccessModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-choco-900/65 backdrop-blur-xs p-4 overflow-y-auto">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl text-center space-y-5 my-auto">
+      <div class="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto shadow-inner">
+        <i data-lucide="check-circle" class="w-9 h-9"></i>
+      </div>
+
+      <div class="space-y-1">
+        <span class="px-3 py-1 rounded-full bg-sage-100 text-sage-700 text-xs font-bold">Pesanan Berhasil Dibuat!</span>
+        <h3 class="font-display text-2xl font-bold text-choco-800 pt-1">Terima Kasih, <span id="succCustomerName">Pelanggan</span>!</h3>
+        <p class="text-xs sm:text-sm text-choco-600">Simpan nomor pesanan Anda untuk memantau status minuman.</p>
+      </div>
+
+      <!-- Order Number Badge -->
+      <div class="p-4 rounded-2xl bg-cream-100 border border-cream-300 space-y-1">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-choco-500">Nomor Pesanan Anda</span>
+        <div class="flex items-center justify-center gap-2">
+          <p id="succOrderNumber" class="font-mono text-lg sm:text-xl font-extrabold text-choco-800">VCB-0000</p>
+          <button onclick="copyOrderNumber()" class="p-1.5 rounded-lg bg-cream-200 hover:bg-cream-300 text-choco-700" title="Salin Nomor Pesanan">
+            <i data-lucide="copy" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <p class="text-xs font-semibold text-sage-700 pt-1">Status: <span id="succOrderStatus">Menunggu Pembayaran</span></p>
+      </div>
+
+      <!-- Summary Snippet -->
+      <div id="succOrderDetails" class="text-left p-4 rounded-2xl bg-white border border-cream-300 text-xs space-y-1.5 text-choco-700">
+        <!-- Injected -->
+      </div>
+
+      <!-- Primary WhatsApp CTA -->
+      <div class="space-y-2.5 pt-1">
+        <button id="sendOrderWaBtn" class="w-full py-3.5 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2">
+          <i data-lucide="message-circle" class="w-5 h-5"></i>
+          <span>Kirim Detail Pesanan ke WhatsApp</span>
+        </button>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <button onclick="closeSuccessAndTrack()" class="py-3 px-4 rounded-2xl bg-choco-800 hover:bg-choco-700 text-cream-50 font-semibold text-xs sm:text-sm transition">
+            Pantau Status
+          </button>
+          <button onclick="closeSuccessToMenu()" class="py-3 px-4 rounded-2xl bg-cream-200 hover:bg-cream-300 text-choco-800 font-semibold text-xs sm:text-sm transition">
+            Kembali ke Menu
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- ORDER TRACKING & HISTORY MODAL                                        -->
+  <!-- ===================================================================== -->
+  <div id="trackingModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-choco-900/60 backdrop-blur-xs p-3 sm:p-6 overflow-y-auto">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl max-w-3xl w-full my-auto shadow-2xl overflow-hidden">
+      <div class="p-5 sm:p-6 border-b border-cream-300 flex items-center justify-between bg-cream-100">
+        <div>
+          <h3 class="font-display text-xl sm:text-2xl font-bold text-choco-800">Lacak & Riwayat Pesanan</h3>
+          <p class="text-xs text-choco-600">Masukkan nomor pesanan Anda atau pilih dari riwayat pesanan.</p>
+        </div>
+        <button onclick="closeTrackingModal()" class="p-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-800 transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 sm:p-6 space-y-6 max-h-[82vh] overflow-y-auto">
+        <!-- Search Input -->
+        <form onsubmit="searchOrderByNumber(event)" class="flex flex-col sm:flex-row gap-2.5">
+          <input id="trackOrderInput" type="text" placeholder="Masukkan Nomor Pesanan (contoh: VCB-20261124-1234)" class="flex-1 px-4 py-3 rounded-2xl bg-white border border-cream-300 focus:outline-none focus:border-sage-600 text-sm font-mono" />
+          <button type="submit" class="px-6 py-3 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 font-bold text-sm transition">
+            Cari Pesanan
+          </button>
+        </form>
+
+        <!-- Active Tracked Order Result -->
+        <div id="trackedOrderResult" class="hidden">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Customer Order History List -->
+        <div class="space-y-3">
+          <h4 class="font-bold text-sm text-choco-800 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-sage-600"></i> Riwayat Pesanan Tersimpan
+          </h4>
+          <div id="orderHistoryList" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- ADD / EDIT PRODUCT MODAL (ADMIN)                                      -->
+  <!-- ===================================================================== -->
+  <div id="productFormModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-choco-900/60 backdrop-blur-xs p-4">
+    <div class="bg-cream-50 border border-cream-300 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 id="productModalTitle" class="font-display text-xl font-bold text-choco-800">Edit Produk</h3>
+        <button onclick="closeProductFormModal()" class="p-2 rounded-xl bg-cream-200 text-choco-800">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <form onsubmit="saveProductForm(event)" class="space-y-3.5">
+        <input type="hidden" id="prodEditId" />
+        <div>
+          <label class="block text-xs font-bold text-choco-700 mb-1">Nama Minuman *</label>
+          <input id="prodNameInput" type="text" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-choco-700 mb-1">Deskripsi *</label>
+          <textarea id="prodDescInput" rows="2" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm"></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-choco-700 mb-1">Harga (Rp) *</label>
+            <input id="prodPriceInput" type="number" min="1000" step="500" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-choco-700 mb-1">Stok Tersedia *</label>
+            <input id="prodStockInput" type="number" min="0" required class="w-full px-3.5 py-2.5 rounded-xl bg-white border border-cream-300 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-choco-700 mb-1">Foto Produk (URL atau Upload File)</label>
+          <input id="prodImgUrlInput" type="text" placeholder="https://..." class="w-full px-3.5 py-2 rounded-xl bg-white border border-cream-300 text-xs mb-2" />
+          <label class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-cream-200 hover:bg-cream-300 text-choco-800 text-xs font-bold">
+            <i data-lucide="image" class="w-3.5 h-3.5"></i> Pilih Foto dari Perangkat
+            <input type="file" accept="image/*" class="hidden" onchange="handleProductImageUpload(event)" />
+          </label>
+        </div>
+        <div class="pt-2 flex justify-end gap-2">
+          <button type="button" onclick="closeProductFormModal()" class="px-4 py-2.5 rounded-xl bg-cream-200 text-choco-700 text-xs font-bold">Batal</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-sage-600 hover:bg-sage-700 text-cream-50 text-xs font-bold">Simpan Produk</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- FLOATING WHATSAPP BUTTON -->
+  <button onclick="openDirectWhatsApp()" aria-label="Chat WhatsApp Van's Cold Bar" class="fixed bottom-5 right-5 z-40 group flex items-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3.5 rounded-full shadow-xl shadow-emerald-900/20 transition-all hover:scale-105 active:scale-95">
+    <i data-lucide="message-circle" class="w-6 h-6"></i>
+    <span class="hidden sm:inline text-xs font-bold pr-1">Chat Penjual</span>
+  </button>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION JAVASCRIPT LOGIC                                          -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS, DEFAULT DATA & STATE MANAGEMENT
+    // =========================================================================
+    const STORAGE_KEYS = {
+      PRODUCTS: 'vcb_products_v1',
+      CART: 'vcb_cart_v1',
+      ORDERS: 'vcb_orders_v1', // Starts completely empty (NO dummy orders!)
+      SETTINGS: 'vcb_settings_v1',
+      ADMIN_SESSION: 'vcb_admin_session_v1',
+      SB_CONFIG: 'vcb_supabase_config_v1'
+    };
+
+    const ORDER_STATUSES = [
+      'Menunggu Pembayaran',
+      'Menunggu Verifikasi',
+      'Pembayaran Berhasil',
+      'Pesanan Diproses',
+      'Siap Diambil',
+      'Sedang Diantar',
+      'Pesanan Selesai'
+    ];
+
+    const DEFAULT_PRODUCTS = [
+      {
+        id: 'prod-matcha-milk',
+        name: 'Matcha Milk',
+        description: 'Perpaduan matcha pilihan dengan susu creamy yang nikmat dan menyegarkan.',
+        price: 10000,
+        stock: 35,
+        image_url: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=800&q=80',
+        is_best_seller: true
+      },
+      {
+        id: 'prod-choco-milk',
+        name: 'Choco Milk',
+        description: 'Perpaduan cokelat lezat dan susu creamy yang memberikan rasa manis dan nikmat.',
+        price: 10000,
+        stock: 35,
+        image_url: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?auto=format&fit=crop&w=800&q=80',
+        is_best_seller: true
+      }
+    ];
+
+    const DEFAULT_SETTINGS = {
+      whatsappNumber: '6281234567890',
+      qrisImageBase64: '' // Empty until admin uploads real QRIS
+    };
+
+    let state = {
+      products: [],
+      cart: [],
+      orders: [],
+      settings: { ...DEFAULT_SETTINGS },
+      productQuantities: {}, // UI selector qty per product card
+      checkoutProofBase64: '',
+      lastCreatedOrder: null,
+      isAdminLoggedIn: false,
+      supabaseClient: null
+    };
+
+    // =========================================================================
+    // 2. INITIALIZATION & STORAGE SYNC
+    // =========================================================================
+    window.addEventListener('DOMContentLoaded', async () => {
+      initSupabaseFromStorage();
+      await loadAllData();
+      renderProducts();
+      renderCart();
+      updateSettingsUI();
+      checkAdminSession();
+      lucide.createIcons();
+
+      // Sync across browser tabs
+      window.addEventListener('storage', (e) => {
+        if (Object.values(STORAGE_KEYS).includes(e.key)) {
+          loadLocalData();
+          renderProducts();
+          renderCart();
+          updateSettingsUI();
+          if (state.isAdminLoggedIn) renderAdminDashboard();
+        }
+      });
+    });
+
+    function initSupabaseFromStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.SB_CONFIG);
+        if (raw) {
+          const cfg = JSON.parse(raw);
+          if (cfg.url && cfg.anonKey && window.supabase) {
+            state.supabaseClient = window.supabase.createClient(cfg.url, cfg.anonKey);
+            document.getElementById('sbUrlInput').value = cfg.url;
+            document.getElementById('sbAnonInput').value = cfg.anonKey;
+          }
+        }
+      } catch (err) {
+        console.error('Supabase init error:', err);
+      }
+    }
+
+    function loadLocalData() {
+      // Load Products
+      const savedProds = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+      state.products = savedProds ? JSON.parse(savedProds) : [...DEFAULT_PRODUCTS];
+      if (!savedProds) {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(state.products));
+      }
+
+      // Init card qty selectors
+      state.products.forEach(p => {
+        if (!state.productQuantities[p.id]) state.productQuantities[p.id] = 1;
+      });
+
+      // Load Cart
+      const savedCart = localStorage.getItem(STORAGE_KEYS.CART);
+      state.cart = savedCart ? JSON.parse(savedCart) : [];
+
+      // Load Orders (Starts empty - zero fake data)
+      const savedOrders = localStorage.getItem(STORAGE_KEYS.ORDERS);
+      state.orders = savedOrders ? JSON.parse(savedOrders) : [];
+
+      // Load Settings
+      const savedSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      state.settings = savedSettings ? { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) } : { ...DEFAULT_SETTINGS };
+    }
+
+    async function loadAllData() {
+      loadLocalData();
+
+      // If Supabase is connected, attempt to sync products & orders
+      if (state.supabaseClient) {
+        try {
+          const { data: sbProducts, error: prodErr } = await state.supabaseClient
+            .from('products')
+            .select('*')
+            .order('created_at', { ascending: true });
+
+          if (!prodErr && sbProducts && sbProducts.length > 0) {
+            state.products = sbProducts;
+            localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(state.products));
+          }
+
+          const { data: sbOrders, error: ordErr } = await state.supabaseClient
+            .from('orders')
+            .select('*, order_items(*), payments(*)')
+            .order('created_at', { ascending: false });
+
+          if (!ordErr && sbOrders) {
+            state.orders = sbOrders.map(o => ({
+              id: o.id,
+              orderNumber: o.order_number,
+              customerName: o.customer_name,
+              customerWhatsapp: o.customer_whatsapp,
+              deliveryMethod: o.delivery_method,
+              deliveryAddress: o.delivery_address || '',
+              notes: o.notes || '',
+              paymentMethod: o.payment_method,
+              totalAmount: o.total_amount,
+              status: o.status,
+              createdAt: o.created_at,
+              items: (o.order_items || []).map(i => ({
+                id: i.product_id,
+                name: i.product_name,
+                price: i.price,
+                qty: i.quantity
+              })),
+              proofUrl: (o.payments && o.payments[0]?.proof_url) || ''
+            }));
+            localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(state.orders));
+          }
+        } catch (err) {
+          console.warn('Supabase sync fallback to localStorage:', err);
+        }
+      }
+    }
+
+    function saveProducts() {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(state.products));
+    }
+
+    function saveCart() {
+      localStorage.setItem(STORAGE_KEYS.CART, JSON.stringify(state.cart));
+    }
+
+    function saveOrders() {
+      localStorage.setItem(STORAGE_KEYS.ORDERS, JSON.stringify(state.orders));
+    }
+
+    function saveSettings() {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(state.settings));
+    }
+
+    // =========================================================================
+    // 3. HELPER UTILITIES (CURRENCY, TOAST, LOADING, CONFIRM)
+    // =========================================================================
+    function formatRupiah(num) {
+      return 'Rp' + Number(num || 0).toLocaleString('id-ID');
+    }
+
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const isError = type === 'error';
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-xl border text-sm font-semibold transform transition-all duration-300 translate-x-4 opacity-0 ${
+        isError
+          ? 'bg-red-50 border-red-200 text-red-800'
+          : 'bg-cream-50 border-sage-300 text-choco-800'
+      }`;
+
+      toast.innerHTML = `
+        <div class="w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
+          isError ? 'bg-red-100 text-red-600' : 'bg-sage-100 text-sage-700'
+        }">
+          <i data-lucide="${isError ? 'alert-circle' : 'check-circle-2'}" class="w-4 h-4"></i>
+        </div>
+        <span class="flex-1 leading-snug">${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-x-4', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('translate-x-4', 'opacity-0');
+        setTimeout(() => toast.remove(), 300);
+      }, 3200);
+    }
+
+    function setLoading(show, text = 'Memproses...') {
+      const overlay = document.getElementById('loadingOverlay');
+      document.getElementById('loadingText').textContent = text;
+      if (show) {
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+      } else {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }
+    }
+
+    function showConfirmDialog(title, message) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('confirmModal');
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMessage').textContent = message;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+
+        const cleanup = (result) => {
+          modal.classList.add('hidden');
+          modal.classList.remove('flex');
+          resolve(result);
+        };
+
+        document.getElementById('confirmOkBtn').onclick = () => cleanup(true);
+        document.getElementById('confirmCancelBtn').onclick = () => cleanup(false);
+      });
+    }
+
+    function openImageModal(src, title = 'Pratinjau Gambar') {
+      if (!src) return;
+      document.getElementById('imageModalSrc').src = src;
+      document.getElementById('imageModalTitle').textContent = title;
+      const modal = document.getElementById('imageModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+    }
+
+    function closeImageModal() {
+      const modal = document.getElementById('imageModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    // =========================================================================
+    // 4. STOREFRONT PRODUCT RENDERING & CART OPERATIONS
+    // =========================================================================
+    function renderProducts() {
+      const grid = document.getElementById('productGrid');
+      if (!grid) return;
+
+      grid.innerHTML = state.products.map(prod => {
+        const qty = state.productQuantities[prod.id] || 1;
+        const outOfStock = prod.stock <= 0;
+        const isTenK = Number(prod.price) === 10000;
+
+        return `
+          <article class="group bg-cream-50 rounded-3xl border border-cream-300 shadow-card hover:shadow-soft transition-all duration-300 overflow-hidden flex flex-col">
+            <!-- Image Header -->
+            <div class="relative aspect-[4/3] bg-cream-200 overflow-hidden">
+              <img
+                src="${prod.image_url}"
+                onerror="this.src='https://placehold.co/600x450/8A9A5B/FFFFFF?text=${encodeURIComponent(prod.name)}'"
+                alt="${prod.name}"
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${outOfStock ? 'grayscale opacity-70' : ''}"
+              />
+              <!-- Badges -->
+              <div class="absolute top-3.5 left-3.5 flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-full bg-choco-800/90 backdrop-blur-xs text-cream-50 text-xs font-extrabold tracking-wide shadow-sm">
+                  ${isTenK ? 'ONLY 10K' : formatRupiah(prod.price)}
+                </span>
+                ${prod.is_best_seller ? `
+                  <span class="px-3 py-1 rounded-full bg-sage-600/95 text-cream-50 text-xs font-bold flex items-center gap-1 shadow-sm">
+                    <i data-lucide="award" class="w-3 h-3"></i> Best Seller
+                  </span>
+                ` : ''}
+              </div>
+
+              <!-- Stock Pill -->
+              <div class="absolute bottom-3.5 right-3.5">
+                <span class="px-3 py-1 rounded-full text-xs font-bold backdrop-blur-xs shadow-xs ${
+                  outOfStock
+                    ? 'bg-red-600 text-white'
+                    : 'bg-cream-50/90 text-choco-800 border border-cream-300'
+                }">
+                  ${outOfStock ? 'Stok Habis' : `Stok: ${prod.stock}`}
+                </span>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="p-6 flex-1 flex flex-col justify-between space-y-5">
+              <div class="space-y-2">
+                <div class="flex items-start justify-between gap-2">
+                  <h3 class="font-display text-2xl font-bold text-choco-800">${prod.name}</h3>
+                  <span class="font-display text-xl font-bold text-sage-700 shrink-0">${formatRupiah(prod.price)}</span>
+                </div>
+                <p class="text-sm text-choco-600 leading-relaxed">${prod.description}</p>
+              </div>
+
+              <!-- Quantity & Action Buttons -->
+              <div class="space-y-3 pt-2 border-t border-cream-200">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold uppercase tracking-wider text-choco-500">Jumlah Pesanan</span>
+                  <div class="inline-flex items-center bg-cream-200 rounded-xl p-1">
+                    <button type="button" onclick="changeCardQty('${prod.id}', -1)" ${outOfStock ? 'disabled' : ''} class="w-8 h-8 rounded-lg bg-cream-50 hover:bg-white text-choco-800 font-bold flex items-center justify-center transition disabled:opacity-40">
+                      -
+                    </button>
+                    <span class="w-10 text-center text-sm font-bold text-choco-800">${qty}</span>
+                    <button type="button" onclick="changeCardQty('${prod.id}', 1)" ${outOfStock ? 'disabled' : ''} class="w-8 h-8 rounded-lg bg-cream-50 hover:bg-white text-choco-800 font-bold flex items-center justify-center transition disabled:opacity-40">
+                      +
+                    </button>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onclick="addToCart('${prod.id}', false)"
+                    ${outOfStock ? 'disabled' : ''}
+                    class="py-3 px-3 rounded-2xl border-2 border-sage-600 text-sage-700 hover:bg-sage-50 font-bold text-xs sm:text-sm transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                    <span>+ Keranjang</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onclick="addToCart('${prod.id}', true)"
+                    ${outOfStock ? 'disabled' : ''}
+                    class="py-3 px-3 rounded-2xl bg-choco-800 hover:bg-choco-700 text-cream-50 font-bold text-xs sm:text-sm shadow-sm transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <span>Beli Sekarang</span>
+                    <i data-lucide="arrow-up-right" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function changeCardQty(productId, delta) {
+      const prod = state.products.find(p => p.id === productId);
+      if (!prod) return;
+      const current = state.productQuantities[productId] || 1;
+      const next = current + delta;
+      if (next < 1) return;
+      if (next > prod.stock) {
+        showToast(`Maksimal stok tersedia ${prod.stock} cup.`, 'error');
+        return;
+      }
+      state.productQuantities[productId] = next;
+      renderProducts();
+    }
+
+    function addToCart(productId, openCheckoutImmediately = false) {
+      const prod = state.products.find(p => p.id === productId);
+      if (!prod) return;
+      if (prod.stock <= 0) {
+        showToast('Maaf, stok minuman ini sedang habis.', 'error');
+        return;
+      }
+
+      const qtyToAdd = state.productQuantities[productId] || 1;
+      const existingIndex = state.cart.findIndex(item => item.productId === productId);
+
+      if (existingIndex > -1) {
+        const newQty = state.cart[existingIndex].qty + qtyToAdd;
+        if (newQty > prod.stock) {
+          showToast(`Stok ${prod.name} tersisa ${prod.stock} cup.`, 'error');
+          return;
+        }
+        state.cart[existingIndex].qty = newQty;
+        state.cart[existingIndex].price = prod.price;
+      } else {
+        if (qtyToAdd > prod.stock) {
+          showToast(`Stok ${prod.name} tersisa ${prod.stock} cup.`, 'error');
+          return;
+        }
+        state.cart.push({
+          productId: prod.id,
+          name: prod.name,
+          price: prod.price,
+          image_url: prod.image_url,
+          qty: qtyToAdd
+        });
+      }
+
+      // Reset selector back to 1
+      state.productQuantities[productId] = 1;
+      saveCart();
+      renderProducts();
+      renderCart();
+
+      if (openCheckoutImmediately) {
+        openCheckoutModal();
+      } else {
+        showToast(`${qtyToAdd}x ${prod.name} ditambahkan ke keranjang!`);
+      }
+    }
+
+    function updateCartItemQty(productId, delta) {
+      const idx = state.cart.findIndex(i => i.productId === productId);
+      if (idx === -1) return;
+
+      const prod = state.products.find(p => p.id === productId);
+      const maxStock = prod ? prod.stock : 99;
+      const newQty = state.cart[idx].qty + delta;
+
+      if (newQty <= 0) {
+        removeCartItem(productId);
+        return;
+      }
+      if (newQty > maxStock) {
+        showToast(`Stok maksimal ${maxStock} cup.`, 'error');
+        return;
+      }
+
+      state.cart[idx].qty = newQty;
+      saveCart();
+      renderCart();
+    }
+
+    async function removeCartItem(productId) {
+      const item = state.cart.find(i => i.productId === productId);
+      if (!item) return;
+
+      const confirmed = await showConfirmDialog(
+        'Hapus Minuman?',
+        `Hapus "${item.name}" dari keranjang belanja Anda?`
+      );
+      if (!confirmed) return;
+
+      state.cart = state.cart.filter(i => i.productId !== productId);
+      saveCart();
+      renderCart();
+      showToast(`${item.name} dihapus dari keranjang.`);
+    }
+
+    function getCartTotals() {
+      let totalQty = 0;
+      let totalAmount = 0;
+      state.cart.forEach(item => {
+        totalQty += Number(item.qty);
+        totalAmount += Number(item.price) * Number(item.qty);
+      });
+      return { totalQty, totalAmount };
+    }
+
+    function renderCart() {
+      const { totalQty, totalAmount } = getCartTotals();
+      document.getElementById('cartBadge').textContent = totalQty;
+
+      const container = document.getElementById('cartItemsContainer');
+      const footer = document.getElementById('cartFooter');
+
+      if (state.cart.length === 0) {
+        footer.classList.add('hidden');
+        container.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-center py-10 px-4 space-y-4">
+            <!-- Custom Empty Cart SVG Illustration -->
+            <svg class="w-40 h-40" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="100" cy="100" r="82" fill="#F5F1E9"/>
+              <path d="M68 62H132L124 146C123.5 151.5 119 156 113.5 156H86.5C81 156 76.5 151.5 76 146L68 62Z" fill="#FFFFFF" stroke="#7C9070" stroke-width="4"/>
+              <path d="M62 62H138" stroke="#4A3525" stroke-width="5" stroke-linecap="round"/>
+              <path d="M110 34L102 62" stroke="#8A9A5B" stroke-width="5" stroke-linecap="round"/>
+              <circle cx="90" cy="102" r="4" fill="#4A3525"/>
+              <circle cx="110" cy="102" r="4" fill="#4A3525"/>
+              <path d="M92 118C95 114 105 114 108 118" stroke="#4A3525" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+            <div class="space-y-1">
+              <h4 class="font-display text-lg font-bold text-choco-800">Keranjang Masih Kosong</h4>
+              <p class="text-xs text-choco-600 max-w-xs">Yuk pilih Matcha Milk atau Choco Milk segar favoritmu. Semua cuma 10K!</p>
+            </div>
+            <button onclick="toggleCartDrawer(false); location.href='#menu'" class="px-6 py-3 rounded-2xl bg-sage-600 hover:bg-sage-700 text-cream-50 text-xs font-bold transition">
+              Lihat Menu Minuman
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      footer.classList.remove('hidden');
+      document.getElementById('cartTotalQty').textContent = totalQty;
+      document.getElementById('cartSubtotalText').textContent = formatRupiah(totalAmount);
+      document.getElementById('cartTotalText').textContent = formatRupiah(totalAmount);
+
+      container.innerHTML = state.cart.map(item => {
+        const subtotal = item.price * item.qty;
+        return `
+          <div class="p-4 rounded-2xl bg-white border border-cream-300 flex gap-3.5 items-center shadow-2xs">
+            <img
+              src="${item.image_url}"
+              onerror="this.src='https://placehold.co/120x120/8A9A5B/FFFFFF?text=Drink'"
+              alt="${item.name}"
+              class="w-16 h-16 rounded-xl object-cover shrink-0 bg-cream-200"
+            />
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <h4 class="font-bold text-sm text-choco-800 truncate">${item.name}</h4>
+                <button onclick="removeCartItem('${item.productId}')" class="text-choco-400 hover:text-red-600 transition p-1" title="Hapus item">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+              <p class="text-xs text-choco-500">${formatRupiah(item.price)} / cup</p>
+              <div class="flex items-center justify-between mt-2.5">
+                <div class="inline-flex items-center bg-cream-100 border border-cream-300 rounded-xl p-0.5">
+                  <button onclick="updateCartItemQty('${item.productId}', -1)" class="w-7 h-7 rounded-lg hover:bg-cream-200 text-choco-800 font-bold text-xs">-</button>
+                  <span class="w-8 text-center text-xs font-bold text-choco-800">${item.qty}</span>
+                  <button onclick="updateCartItemQty('${item.productId}', 1)" class="w-7 h-7 rounded-lg hover:bg-cream-200 text-choco-800 font-bold text-xs">+</button>
+                </div>
+                <span class="font-bold text-sm text-sage-700">${formatRupiah(subtotal)}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function toggleCartDrawer(open) {
+      const overlay = document.getElementById('cartDrawerOverlay');
+      const drawer = document.getElementById('cartDrawer');
+      if (open) {
+        renderCart();
+        overlay.classList.remove('hidden');
+        requestAnimationFrame(() => drawer.classList.remove('translate-x-full'));
+      } else {
+        drawer.classList.add('translate-x-full');
+        setTimeout(() => overlay.classList.add('hidden'), 280);
+      }
+    }
+
+    // =========================================================================
+    // 5. CHECKOUT, QRIS UPLOAD & ORDER SUBMISSION
+    // =========================================================================
+    function openCheckoutModal() {
+      if (state.cart.length === 0) {
+        showToast('Keranjang belanja Anda masih kosong.', 'error');
+        return;
+      }
+
+      toggleCartDrawer(false);
+      state.checkoutProofBase64 = '';
+      document.getElementById('chkProofInput').value = '';
+      document.getElementById('chkProofFileName').textContent = 'Pilih Foto Bukti Transfer';
+      document.getElementById('chkProofPreviewWrap').classList.add('hidden');
+
+      // Render summary items
+      const { totalAmount } = getCartTotals();
+      document.getElementById('chkTotalAmount').textContent = formatRupiah(totalAmount);
+      document.getElementById('chkSummaryItems').innerHTML = state.cart.map(item => `
+        <div class="flex justify-between items-center">
+          <span>${item.qty}x ${item.name}</span>
+          <span class="font-semibold">${formatRupiah(item.price * item.qty)}</span>
+        </div>
+      `).join('');
+
+      // Render Merchant QRIS Image if uploaded by Admin
+      const qrisImg = document.getElementById('chkQrisImg');
+      const qrisEmpty = document.getElementById('chkQrisNotUploaded');
+      if (state.settings.qrisImageBase64) {
+        qrisImg.src = state.settings.qrisImageBase64;
+        qrisImg.classList.remove('hidden');
+        qrisEmpty.classList.add('hidden');
+      } else {
+        qrisImg.classList.add('hidden');
+        qrisEmpty.classList.remove('hidden');
+      }
+
+      onDeliveryMethodChange();
+      onPaymentMethodChange();
+
+      const modal = document.getElementById('checkoutModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeCheckoutModal() {
+      const modal = document.getElementById('checkoutModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function onDeliveryMethodChange() {
+      const method = document.querySelector('input[name="deliveryMethod"]:checked').value;
+      const addrWrap = document.getElementById('chkAddressWrapper');
+      const addrInput = document.getElementById('chkAddress');
+      const cashText = document.getElementById('cashInstructionText');
+
+      if (method === 'Delivery') {
+        addrWrap.classList.remove('hidden');
+        addrInput.required = true;
+        cashText.textContent = 'Pembayaran tunai saat pesanan diantar dan diterima di alamat Anda (COD - Cash On Delivery).';
+      } else {
+        addrWrap.classList.add('hidden');
+        addrInput.required = false;
+        cashText.textContent = 'Silakan lakukan pembayaran tunai langsung saat mengambil pesanan di outlet Van’s Cold Bar.';
+      }
+    }
+
+    function onPaymentMethodChange() {
+      const payMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+      const qrisPanel = document.getElementById('paymentQrisPanel');
+      const cashPanel = document.getElementById('paymentCashPanel');
+
+      if (payMethod === 'QRIS') {
+        qrisPanel.classList.remove('hidden');
+        cashPanel.classList.add('hidden');
+      } else {
+        qrisPanel.classList.add('hidden');
+        cashPanel.classList.remove('hidden');
+      }
+    }
+
+    function copyCheckoutNominal() {
+      const { totalAmount } = getCartTotals();
+      const tempInput = document.createElement('input');
+      tempInput.value = totalAmount;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showToast(`Nominal ${formatRupiah(totalAmount)} disalin!`);
+    }
+
+    function handleCheckoutProofUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showToast('Ukuran gambar maksimal 4MB.', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        state.checkoutProofBase64 = e.target.result;
+        document.getElementById('chkProofFileName').textContent = file.name;
+        document.getElementById('chkProofPreviewImg').src = e.target.result;
+        document.getElementById('chkProofPreviewWrap').classList.remove('hidden');
+        showToast('Bukti pembayaran siap diunggah.');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearCheckoutProof() {
+      state.checkoutProofBase64 = '';
+      document.getElementById('chkProofInput').value = '';
+      document.getElementById('chkProofFileName').textContent = 'Pilih Foto Bukti Transfer';
+      document.getElementById('chkProofPreviewWrap').classList.add('hidden');
+    }
+
+    function generateOrderNumber() {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      const d = String(now.getDate()).padStart(2, '0');
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      return `VCB-${y}${m}${d}-${rand}`;
+    }
+
+    async function submitCheckoutOrder(event) {
+      event.preventDefault();
+      if (state.cart.length === 0) return;
+
+      const customerName = document.getElementById('chkName').value.trim();
+      const customerWhatsapp = document.getElementById('chkWhatsapp').value.trim();
+      const deliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
+      const deliveryAddress = document.getElementById('chkAddress').value.trim();
+      const notes = document.getElementById('chkNotes').value.trim();
+      const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+
+      if (!customerName || !customerWhatsapp) {
+        showToast('Nama lengkap dan nomor WhatsApp wajib diisi.', 'error');
+        return;
+      }
+      if (deliveryMethod === 'Delivery' && !deliveryAddress) {
+        showToast('Alamat pengiriman wajib diisi untuk layanan Delivery.', 'error');
+        return;
+      }
+
+      // Verify stock availability before creating order
+      for (const item of state.cart) {
+        const prod = state.products.find(p => p.id === item.productId);
+        if (!prod || prod.stock < item.qty) {
+          showToast(`Stok ${item.name} tidak mencukupi.`, 'error');
+          return;
+        }
+      }
+
+      setLoading(true, 'Menyimpan pesanan Anda...');
+
+      const { totalAmount } = getCartTotals();
+      const orderNumber = generateOrderNumber();
+
+      // Determine initial status:
+      // If QRIS + proof uploaded -> Menunggu Verifikasi
+      // If QRIS without proof -> Menunggu Pembayaran
+      // If CASH -> Menunggu Pembayaran (bayar saat pickup/COD)
+      let initialStatus = 'Menunggu Pembayaran';
+      if (paymentMethod === 'QRIS' && state.checkoutProofBase64) {
+        initialStatus = 'Menunggu Verifikasi';
+      }
+
+      const newOrder = {
+        id: 'ord-' + Date.now(),
+        orderNumber,
+        customerName,
+        customerWhatsapp,
+        deliveryMethod,
+        deliveryAddress: deliveryMethod === 'Delivery' ? deliveryAddress : '',
+        notes,
+        paymentMethod,
+        totalAmount,
+        status: initialStatus,
+        proofUrl: paymentMethod === 'QRIS' ? state.checkoutProofBase64 : '',
+        stockDeducted: false,
+        createdAt: new Date().toISOString(),
+        items: state.cart.map(i => ({
+          id: i.productId,
+          name: i.name,
+          price: i.price,
+          qty: i.qty
+        }))
+      };
+
+      // Save to Supabase if connected
+      if (state.supabaseClient) {
+        try {
+          const { data: insertedOrder, error: ordErr } = await state.supabaseClient
+            .from('orders')
+            .insert([{
+              order_number: newOrder.orderNumber,
+              customer_name: newOrder.customerName,
+              customer_whatsapp: newOrder.customerWhatsapp,
+              delivery_method: newOrder.deliveryMethod,
+              delivery_address: newOrder.deliveryAddress,
+              notes: newOrder.notes,
+              payment_method: newOrder.paymentMethod,
+              total_amount: newOrder.totalAmount,
+              status: newOrder.status
+            }])
+            .select()
+            .single();
+
+          if (!ordErr && insertedOrder) {
+            newOrder.id = insertedOrder.id;
+            await state.supabaseClient.from('order_items').insert(
+              newOrder.items.map(i => ({
+                order_id: insertedOrder.id,
+                product_id: i.id,
+                product_name: i.name,
+                price: i.price,
+                quantity: i.qty,
+                subtotal: i.price * i.qty
+              }))
+            );
+            await state.supabaseClient.from('payments').insert([{
+              order_id: insertedOrder.id,
+              payment_method: newOrder.paymentMethod,
+              amount: newOrder.totalAmount,
+              proof_url: newOrder.proofUrl,
+              status: newOrder.status
+            }]);
+          }
+        } catch (err) {
+          console.warn('Supabase order insert fallback to local:', err);
+        }
+      }
+
+      // Save locally so it never disappears on refresh
+      state.orders.unshift(newOrder);
+      saveOrders();
+
+      // Clear cart
+      state.cart = [];
+      saveCart();
+      renderCart();
+
+      setLoading(false);
+      closeCheckoutModal();
+      document.getElementById('checkoutForm').reset();
+
+      openOrderSuccessModal(newOrder);
+      showToast('Pesanan berhasil dibuat!');
+    }
+
+    // =========================================================================
+    // 6. ORDER SUCCESS & WHATSAPP INTEGRATION
+    // =========================================================================
+    function buildWhatsAppOrderText(order) {
+      const menuLines = order.items.map(i => `- ${i.name} (${i.qty}x)`).join('\n');
+      const totalQty = order.items.reduce((sum, i) => sum + i.qty, 0);
+
+      return [
+        'Halo Van’s Cold Bar! Saya ingin memesan:',
+        `Nama: ${order.customerName}`,
+        `Nomor Pesanan: ${order.orderNumber}`,
+        `Menu:\n${menuLines}`,
+        `Jumlah: ${totalQty} cup`,
+        `Total: ${formatRupiah(order.totalAmount)}`,
+        `Metode Pembayaran: ${order.paymentMethod}`,
+        `Metode Pengambilan: ${order.deliveryMethod}${order.deliveryMethod === 'Delivery' && order.deliveryAddress ? ` (${order.deliveryAddress})` : ''}`,
+        'Mohon konfirmasi pesanan saya. Terima kasih!'
+      ].join('\n');
+    }
+
+    function openOrderSuccessModal(order) {
+      state.lastCreatedOrder = order;
+      document.getElementById('succCustomerName').textContent = order.customerName;
+      document.getElementById('succOrderNumber').textContent = order.orderNumber;
+      document.getElementById('succOrderStatus').textContent = order.status;
+
+      const itemsSummary = order.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+      document.getElementById('succOrderDetails').innerHTML = `
+        <div class="flex justify-between"><span class="text-choco-500">Menu:</span><span class="font-bold text-right">${itemsSummary}</span></div>
+        <div class="flex justify-between"><span class="text-choco-500">Total:</span><span class="font-bold text-sage-700">${formatRupiah(order.totalAmount)}</span></div>
+        <div class="flex justify-between"><span class="text-choco-500">Pembayaran:</span><span class="font-bold">${order.paymentMethod}</span></div>
+        <div class="flex justify-between"><span class="text-choco-500">Pengambilan:</span><span class="font-bold">${order.deliveryMethod}</span></div>
+      `;
+
+      document.getElementById('sendOrderWaBtn').onclick = () => {
+        const text = buildWhatsAppOrderText(order);
+        const waNum = (state.settings.whatsappNumber || '6281234567890').replace(/[^0-9]/g, '');
+        window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(text)}`, '_blank');
+      };
+
+      const modal = document.getElementById('orderSuccessModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function copyOrderNumber() {
+      if (!state.lastCreatedOrder) return;
+      const temp = document.createElement('input');
+      temp.value = state.lastCreatedOrder.orderNumber;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showToast('Nomor pesanan disalin!');
+    }
+
+    function closeSuccessToMenu() {
+      const modal = document.getElementById('orderSuccessModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.getElementById('menu').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function closeSuccessAndTrack() {
+      const modal = document.getElementById('orderSuccessModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      openTrackingModal(state.lastCreatedOrder?.orderNumber || '');
+    }
+
+    function openDirectWhatsApp() {
+      const waNum = (state.settings.whatsappNumber || '6281234567890').replace(/[^0-9]/g, '');
+      const msg = 'Halo Van’s Cold Bar! Saya ingin bertanya tentang menu minuman.';
+      window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+    }
+
+    // =========================================================================
+    // 7. ORDER TRACKING (7 STAGES) & ORDER HISTORY
+    // =========================================================================
+    function openTrackingModal(prefillOrderNumber = '') {
+      const modal = document.getElementById('trackingModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+
+      renderOrderHistoryList();
+
+      if (prefillOrderNumber) {
+        document.getElementById('trackOrderInput').value = prefillOrderNumber;
+        displayTrackedOrder(prefillOrderNumber);
+      } else if (state.orders.length > 0) {
+        displayTrackedOrder(state.orders[0].orderNumber);
+      } else {
+        document.getElementById('trackedOrderResult').classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
+    function closeTrackingModal() {
+      const modal = document.getElementById('trackingModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function searchOrderByNumber(event) {
+      event.preventDefault();
+      const query = document.getElementById('trackOrderInput').value.trim();
+      if (!query) {
+        showToast('Masukkan nomor pesanan terlebih dahulu.', 'error');
+        return;
+      }
+      displayTrackedOrder(query);
+    }
+
+    function displayTrackedOrder(orderNumber) {
+      const container = document.getElementById('trackedOrderResult');
+      const order = state.orders.find(
+        o => o.orderNumber.toLowerCase() === orderNumber.toLowerCase()
+      );
+
+      if (!order) {
+        container.classList.remove('hidden');
+        container.innerHTML = `
+          <div class="p-5 rounded-2xl bg-red-50 border border-red-200 text-center space-y-1">
+            <p class="text-sm font-bold text-red-800">Pesanan "${orderNumber}" tidak ditemukan.</p>
+            <p class="text-xs text-red-600">Pastikan penulisan nomor pesanan sudah benar.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const currentIdx = ORDER_STATUSES.indexOf(order.status);
+
+      container.classList.remove('hidden');
+      container.innerHTML = `
+        <div class="p-5 rounded-3xl bg-white border border-cream-300 shadow-card space-y-5">
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-cream-200">
+            <div>
+              <span class="text-[11px] font-bold uppercase tracking-wider text-choco-500">Nomor Pesanan</span>
+              <h4 class="font-mono text-lg font-extrabold text-choco-800">${order.orderNumber}</h4>
+            </div>
+            <span class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-sage-100 text-sage-800">
+              ${order.status}
+            </span>
+          </div>
+
+          <!-- 7-Step Status Timeline -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            ${ORDER_STATUSES.map((st, idx) => {
+              const isCompleted = idx <= currentIdx;
+              const isCurrent = idx === currentIdx;
+              return `
+                <div class="flex items-center gap-3 p-2.5 rounded-xl border ${
+                  isCurrent
+                    ? 'bg-sage-50 border-sage-500'
+                    : isCompleted
+                    ? 'bg-cream-50 border-cream-300'
+                    : 'bg-white border-cream-200 opacity-55'
+                }">
+                  <div class="w-6 h-6 rounded-full text-xs font-bold flex items-center justify-center shrink-0 ${
+                    isCompleted ? 'bg-sage-600 text-white' : 'bg-cream-200 text-choco-600'
+                  }">
+                    ${idx + 1}
+                  </div>
+                  <span class="text-xs font-bold ${isCurrent ? 'text-sage-800' : 'text-choco-700'}">${st}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Order Details -->
+          <div class="p-4 rounded-2xl bg-cream-100 text-xs space-y-1.5 text-choco-700">
+            <div class="flex justify-between"><span>Pemesan:</span><span class="font-bold">${order.customerName} (${order.customerWhatsapp})</span></div>
+            <div class="flex justify-between"><span>Item:</span><span class="font-bold">${order.items.map(i => `${i.qty}x ${i.name}`).join(', ')}</span></div>
+            <div class="flex justify-between"><span>Total:</span><span class="font-bold text-sage-700">${formatRupiah(order.totalAmount)}</span></div>
+            <div class="flex justify-between"><span>Metode:</span><span class="font-bold">${order.paymentMethod} • ${order.deliveryMethod}</span></div>
+          </div>
+
+          <!-- Late Upload Proof if QRIS & Still Menunggu Pembayaran -->
+          ${order.paymentMethod === 'QRIS' && order.status === 'Menunggu Pembayaran' ? `
+            <div class="p-4 rounded-2xl bg-amber-50 border border-amber-200 space-y-2">
+              <p class="text-xs font-bold text-amber-900">Belum mengunggah bukti pembayaran QRIS?</p>
+              <label class="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-choco-800 text-cream-50 text-xs font-bold">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i> Upload Bukti Bayar Sekarang
+                <input type="file" accept="image/*" class="hidden" onchange="uploadLatePaymentProof(event, '${order.id}')" />
+              </label>
+            </div>
+          ` : ''}
+        </div>
+      `;
+      lucide.createIcons();
+    }
+
+    function uploadLatePaymentProof(event, orderId) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const order = state.orders.find(o => o.id === orderId);
+        if (!order) return;
+        order.proofUrl = e.target.result;
+        order.status = 'Menunggu Verifikasi';
+        saveOrders();
+        displayTrackedOrder(order.orderNumber);
+        renderOrderHistoryList();
+        showToast('Bukti pembayaran diunggah! Status: Menunggu Verifikasi.');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function renderOrderHistoryList() {
+      const list = document.getElementById('orderHistoryList');
+      if (state.orders.length === 0) {
+        list.innerHTML = `
+          <div class="p-6 rounded-2xl bg-cream-100 border border-cream-300 text-center text-xs text-choco-600">
+            Belum ada riwayat pesanan. Silakan pesan minuman favorit Anda terlebih dahulu!
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = state.orders.map(o => `
+        <div onclick="displayTrackedOrder('${o.orderNumber}')" class="cursor-pointer p-4 rounded-2xl bg-white hover:bg-cream-100 border border-cream-300 transition flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <p class="font-mono text-xs font-extrabold text-choco-800">${o.orderNumber}</p>
+            <p class="text-xs text-choco-600">${o.items.map(i => `${i.qty}x ${i.name}`).join(', ')} • <strong>${formatRupiah(o.totalAmount)}</strong></p>
+          </div>
+          <span class="self-start sm:self-center px-3 py-1 rounded-full text-[11px] font-bold bg-sage-100 text-sage-800">
+            ${o.status}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 8. NAVIGATION & ADMIN AUTHENTICATION
+    // =========================================================================
+    function switchView(viewName) {
+      const storeView = document.getElementById('storeView');
+      const adminView = document.getElementById('adminView');
+
+      if (viewName === 'admin') {
+        storeView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        checkAdminSession();
+      } else {
+        adminView.classList.add('hidden');
+        storeView.classList.remove('hidden');
+        renderProducts();
+      }
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleAdminView() {
+      const adminView = document.getElementById('adminView');
+      if (adminView.classList.contains('hidden')) {
+        switchView('admin');
+      } else {
+        switchView('store');
+      }
+    }
+
+    function toggleMobileMenu() {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    }
+
+    function checkAdminSession() {
+      const session = localStorage.getItem(STORAGE_KEYS.ADMIN_SESSION);
+      state.isAdminLoggedIn = session === 'authenticated';
+
+      const loginBox = document.getElementById('adminLoginBox');
+      const dashContent = document.getElementById('adminDashboardContent');
+
+      if (state.isAdminLoggedIn) {
+        loginBox.classList.add('hidden');
+        dashContent.classList.remove('hidden');
+        renderAdminDashboard();
+      } else {
+        loginBox.classList.remove('hidden');
+        dashContent.classList.add('hidden');
+      }
+    }
+
+    async function handleAdminLogin(event) {
+      event.preventDefault();
+      const email = document.getElementById('adminEmailInput').value.trim();
+      const password = document.getElementById('adminPassInput').value.trim();
+
+      setLoading(true, 'Memverifikasi akun admin...');
+
+      // Try Supabase Auth if configured
+      if (state.supabaseClient) {
+        try {
+          const { data, error } = await state.supabaseClient.auth.signInWithPassword({ email, password });
+          if (!error && data?.user) {
+            localStorage.setItem(STORAGE_KEYS.ADMIN_SESSION, 'authenticated');
+            setLoading(false);
+            checkAdminSession();
+            showToast('Login Supabase Admin berhasil!');
+            return;
+          }
+        } catch (err) {
+          console.warn('Supabase auth fallback:', err);
+        }
+      }
+
+      // Local Admin Credentials Check
+      if (email === 'admin@vanscoldbar.com' && password === 'admin123') {
+        localStorage.setItem(STORAGE_KEYS.ADMIN_SESSION, 'authenticated');
+        setLoading(false);
+        checkAdminSession();
+        showToast('Selamat datang di Dashboard Admin!');
+      } else {
+        setLoading(false);
+        showToast('Email atau password admin salah.', 'error');
+      }
+    }
+
+    async function handleAdminLogout() {
+      if (state.supabaseClient) {
+        await state.supabaseClient.auth.signOut().catch(() => {});
+      }
+      localStorage.removeItem(STORAGE_KEYS.ADMIN_SESSION);
+      state.isAdminLoggedIn = false;
+      checkAdminSession();
+      showToast('Anda telah keluar dari Dashboard Admin.');
+    }
+
+    // =========================================================================
+    // 9. ADMIN DASHBOARD OPERATIONS (STATS, ORDERS, VERIFY QRIS, PRODUCTS, QRIS)
+    // =========================================================================
+    function switchAdminTab(tabName) {
+      ['orders', 'products', 'settings', 'supabase'].forEach(t => {
+        document.getElementById(`adminTab-${t}`).classList.add('hidden');
+        const btn = document.getElementById(`tabBtn-${t}`);
+        btn.classList.remove('bg-choco-800', 'text-cream-50');
+        btn.classList.add('bg-cream-200', 'text-choco-700');
+      });
+
+      document.getElementById(`adminTab-${tabName}`).classList.remove('hidden');
+      const activeBtn = document.getElementById(`tabBtn-${tabName}`);
+      activeBtn.classList.remove('bg-cream-200', 'text-choco-700');
+      activeBtn.classList.add('bg-choco-800', 'text-cream-50');
+      lucide.createIcons();
+    }
+
+    function renderAdminDashboard() {
+      // Update DB Mode badge
+      const badge = document.getElementById('dbModeBadge');
+      if (state.supabaseClient) {
+        badge.textContent = 'Supabase Connected';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800';
+      } else {
+        badge.textContent = 'LocalStorage Mode';
+        badge.className = 'px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800';
+      }
+
+      // Compute KPIs
+      const paidStatuses = ['Pembayaran Berhasil', 'Pesanan Diproses', 'Siap Diambil', 'Sedang Diantar', 'Pesanan Selesai'];
+      const revenue = state.orders
+        .filter(o => paidStatuses.includes(o.status))
+        .reduce((sum, o) => sum + Number(o.totalAmount), 0);
+
+      const pendingVerifyCount = state.orders.filter(o => o.status === 'Menunggu Verifikasi').length;
+      const totalStock = state.products.reduce((sum, p) => sum + Number(p.stock), 0);
+
+      document.getElementById('statRevenue').textContent = formatRupiah(revenue);
+      document.getElementById('statTotalOrders').textContent = state.orders.length;
+      document.getElementById('statPendingVerify').textContent = pendingVerifyCount;
+      document.getElementById('statTotalStock').textContent = `${totalStock} Cup`;
+
+      renderAdminOrders();
+      renderAdminProducts();
+      updateSettingsUI();
+      lucide.createIcons();
+    }
+
+    function deductOrderStockOnce(order) {
+      if (order.stockDeducted) return;
+      order.items.forEach(item => {
+        const prod = state.products.find(p => p.id === item.id);
+        if (prod) {
+          prod.stock = Math.max(0, Number(prod.stock) - Number(item.qty));
+        }
+      });
+      order.stockDeducted = true;
+      saveProducts();
+    }
+
+    function renderAdminOrders() {
+      const container = document.getElementById('adminOrdersList');
+      const filter = document.getElementById('adminOrderFilter').value;
+
+      const filtered = filter === 'ALL'
+        ? state.orders
+        : state.orders.filter(o => o.status === filter);
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="p-10 rounded-3xl bg-cream-50 border border-cream-300 text-center space-y-2">
+            <i data-lucide="inbox" class="w-10 h-10 text-choco-400 mx-auto"></i>
+            <p class="font-bold text-choco-800 text-base">Belum Ada Pesanan</p>
+            <p class="text-xs text-choco-600">Pesanan nyata dari pelanggan akan muncul di sini secara otomatis setelah checkout.</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      container.innerHTML = filtered.map(order => {
+        const isNeedsVerify = order.status === 'Menunggu Verifikasi';
+        return `
+          <div class="bg-cream-50 border ${isNeedsVerify ? 'border-amber-400 ring-2 ring-amber-200/60' : 'border-cream-300'} rounded-3xl p-5 sm:p-6 shadow-card space-y-4">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-cream-200">
+              <div>
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="font-mono text-sm font-extrabold text-choco-800">${order.orderNumber}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                    order.paymentMethod === 'QRIS' ? 'bg-purple-100 text-purple-800' : 'bg-emerald-100 text-emerald-800'
+                  }">${order.paymentMethod}</span>
+                  <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-cream-200 text-choco-800">${order.deliveryMethod}</span>
+                </div>
+                <p class="text-xs text-choco-600 mt-1">
+                  <strong>${order.customerName}</strong> • WA: <a href="https://wa.me/${order.customerWhatsapp.replace(/^0/, '62')}" target="_blank" class="text-sage-700 underline font-semibold">${order.customerWhatsapp}</a>
+                  • ${new Date(order.createdAt).toLocaleString('id-ID')}
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <select onchange="adminUpdateOrderStatus('${order.id}', this.value)" class="px-3 py-2 rounded-xl bg-white border border-cream-300 text-xs font-bold text-choco-800">
+                  ${ORDER_STATUSES.map(st => `<option value="${st}" ${order.status === st ? 'selected' : ''}>${st}</option>`).join('')}
+                </select>
+                <button onclick="adminDeleteOrder('${order.id}')" class="p-2 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 transition" title="Hapus Pesanan">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+              <!-- Order Items & Address -->
+              <div class="md:col-span-7 space-y-1.5 text-xs text-choco-700">
+                <p class="font-bold text-choco-800">Rincian Minuman:</p>
+                <ul class="space-y-1">
+                  ${order.items.map(i => `<li>• ${i.qty}x <strong>${i.name}</strong> = ${formatRupiah(i.price * i.qty)}</li>`).join('')}
+                </ul>
+                <p class="pt-1 font-bold text-sm text-sage-700">Total: ${formatRupiah(order.totalAmount)}</p>
+                ${order.deliveryAddress ? `<p class="text-choco-600"><strong>Alamat:</strong> ${order.deliveryAddress}</p>` : ''}
+                ${order.notes ? `<p class="text-choco-600"><strong>Catatan:</strong> ${order.notes}</p>` : ''}
+              </div>
+
+              <!-- QRIS Proof Verification Box -->
+              <div class="md:col-span-5">
+                ${order.paymentMethod === 'QRIS' ? `
+                  <div class="p-3.5 rounded-2xl bg-white border border-cream-300 space-y-2.5">
+                    <div class="flex items-center justify-between">
+                      <span class="text-xs font-bold text-choco-800">Bukti Bayar QRIS</span>
+                      ${order.proofUrl ? `
+                        <button onclick="openImageModal('${order.proofUrl}', 'Bukti Pembayaran ${order.orderNumber}')" class="text-xs font-bold text-sage-600 hover:underline flex items-center gap-1">
+                          <i data-lucide="eye" class="w-3.5 h-3.5"></i> Lihat Bukti
+                        </button>
+                      ` : `<span class="text-[11px] text-red-600 font-semibold">Belum diunggah</span>`}
+                    </div>
+
+                    ${order.proofUrl ? `
+                      <img src="${order.proofUrl}" onclick="openImageModal(this.src, 'Bukti Pembayaran ${order.orderNumber}')" class="w-full h-24 object-cover rounded-xl cursor-pointer border border-cream-200" />
+                    ` : ''}
+
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                      <button onclick="verifyQrisPayment('${order.id}', true)" class="py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition">
+                        Terima
+                      </button>
+                      <button onclick="verifyQrisPayment('${order.id}', false)" class="py-2 px-3 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold transition">
+                        Tolak
+                      </button>
+                    </div>
+                  </div>
+                ` : `
+                  <div class="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-xs text-emerald-900">
+                    <p class="font-bold">Pembayaran Tunai (CASH)</p>
+                    <p class="mt-0.5">Tagih tunai sebesar <strong>${formatRupiah(order.totalAmount)}</strong> saat ${order.deliveryMethod === 'Delivery' ? 'pesanan diantar (COD)' : 'pelanggan pickup'}.</p>
+                  </div>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    async function verifyQrisPayment(orderId, isApproved) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      if (isApproved) {
+        order.status = 'Pembayaran Berhasil';
+        deductOrderStockOnce(order);
+        showToast(`Pembayaran ${order.orderNumber} diterima & stok diperbarui!`);
+      } else {
+        order.status = 'Menunggu Pembayaran';
+        showToast(`Bukti pembayaran ${order.orderNumber} ditolak.`, 'error');
+      }
+
+      saveOrders();
+      await syncOrderStatusToSupabase(order);
+      renderAdminDashboard();
+    }
+
+    async function adminUpdateOrderStatus(orderId, newStatus) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      order.status = newStatus;
+      const confirmedStatuses = ['Pembayaran Berhasil', 'Pesanan Diproses', 'Siap Diambil', 'Sedang Diantar', 'Pesanan Selesai'];
+      if (confirmedStatuses.includes(newStatus)) {
+        deductOrderStockOnce(order);
+      }
+
+      saveOrders();
+      await syncOrderStatusToSupabase(order);
+      renderAdminDashboard();
+      showToast(`Status ${order.orderNumber} diubah menjadi "${newStatus}".`);
+    }
+
+    async function syncOrderStatusToSupabase(order) {
+      if (!state.supabaseClient) return;
+      try {
+        await state.supabaseClient
+          .from('orders')
+          .update({ status: order.status })
+          .eq('order_number', order.orderNumber);
+      } catch (err) {
+        console.warn('Supabase status update error:', err);
+      }
+    }
+
+    async function adminDeleteOrder(orderId) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+
+      const confirmed = await showConfirmDialog(
+        'Hapus Pesanan?',
+        `Anda yakin ingin menghapus pesanan ${order.orderNumber} (${order.customerName}) secara permanen?`
+      );
+      if (!confirmed) return;
+
+      state.orders = state.orders.filter(o => o.id !== orderId);
+      saveOrders();
+
+      if (state.supabaseClient) {
+        await state.supabaseClient.from('orders').delete().eq('order_number', order.orderNumber).catch(() => {});
+      }
+
+      renderAdminDashboard();
+      showToast(`Pesanan ${order.orderNumber} telah dihapus.`);
+    }
+
+    // ADMIN PRODUCT MANAGEMENT
+    function renderAdminProducts() {
+      const grid = document.getElementById('adminProductsGrid');
+      grid.innerHTML = state.products.map(prod => `
+        <div class="bg-cream-50 border border-cream-300 rounded-3xl p-5 shadow-card flex gap-4 items-center">
+          <img
+            src="${prod.image_url}"
+            onerror="this.src='https://placehold.co/150x150/8A9A5B/FFFFFF?text=Drink'"
+            alt="${prod.name}"
+            class="w-24 h-24 rounded-2xl object-cover shrink-0 bg-cream-200"
+          />
+          <div class="flex-1 min-w-0 space-y-1.5">
+            <h4 class="font-display text-lg font-bold text-choco-800 truncate">${prod.name}</h4>
+            <p class="text-xs text-choco-600 line-clamp-2">${prod.description}</p>
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+              <span class="px-2.5 py-1 rounded-lg bg-sage-100 text-sage-800 text-xs font-bold">${formatRupiah(prod.price)}</span>
+              <span class="px-2.5 py-1 rounded-lg bg-cream-200 text-choco-800 text-xs font-bold">Stok: ${prod.stock}</span>
+            </div>
+            <div class="pt-2 flex items-center gap-2">
+              <button onclick="openEditProductModal('${prod.id}')" class="px-3.5 py-1.5 rounded-xl bg-choco-800 hover:bg-choco-700 text-cream-50 text-xs font-bold transition">
+                Edit Produk & Stok
+              </button>
+              ${state.products.length > 1 ? `
+                <button onclick="deleteProduct('${prod.id}')" class="px-3 py-1.5 rounded-xl bg-red-100 hover:bg-red-200 text-red-700 text-xs font-bold transition">
+                  Hapus
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openAddProductModal() {
+      document.getElementById('productModalTitle').textContent = 'Tambah Menu Minuman';
+      document.getElementById('prodEditId').value = '';
+      document.getElementById('prodNameInput').value = '';
+      document.getElementById('prodDescInput').value = '';
+      document.getElementById('prodPriceInput').value = 10000;
+      document.getElementById('prodStockInput').value = 30;
+      document.getElementById('prodImgUrlInput').value = 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=800&q=80';
+
+      const modal = document.getElementById('productFormModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function openEditProductModal(productId) {
+      const prod = state.products.find(p => p.id === productId);
+      if (!prod) return;
+
+      document.getElementById('productModalTitle').textContent = `Edit ${prod.name}`;
+      document.getElementById('prodEditId').value = prod.id;
+      document.getElementById('prodNameInput').value = prod.name;
+      document.getElementById('prodDescInput').value = prod.description;
+      document.getElementById('prodPriceInput').value = prod.price;
+      document.getElementById('prodStockInput').value = prod.stock;
+      document.getElementById('prodImgUrlInput').value = prod.image_url;
+
+      const modal = document.getElementById('productFormModal');
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      lucide.createIcons();
+    }
+
+    function closeProductFormModal() {
+      const modal = document.getElementById('productFormModal');
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }
+
+    function handleProductImageUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        document.getElementById('prodImgUrlInput').value = e.target.result;
+        showToast('Foto produk berhasil dimuat.');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveProductForm(event) {
+      event.preventDefault();
+      const id = document.getElementById('prodEditId').value;
+      const name = document.getElementById('prodNameInput').value.trim();
+      const description = document.getElementById('prodDescInput').value.trim();
+      const price = Number(document.getElementById('prodPriceInput').value);
+      const stock = Number(document.getElementById('prodStockInput').value);
+      const image_url = document.getElementById('prodImgUrlInput').value.trim();
+
+      if (id) {
+        const prod = state.products.find(p => p.id === id);
+        if (prod) {
+          prod.name = name;
+          prod.description = description;
+          prod.price = price;
+          prod.stock = stock;
+          prod.image_url = image_url;
+        }
+      } else {
+        const newProd = {
+          id: 'prod-' + Date.now(),
+          name,
+          description,
+          price,
+          stock,
+          image_url,
+          is_best_seller: true
+        };
+        state.products.push(newProd);
+      }
+
+      saveProducts();
+      closeProductFormModal();
+      renderAdminDashboard();
+      renderProducts();
+      showToast('Data produk berhasil disimpan!');
+    }
+
+    async function deleteProduct(productId) {
+      const prod = state.products.find(p => p.id === productId);
+      if (!prod) return;
+      const confirmed = await showConfirmDialog('Hapus Produk?', `Hapus menu "${prod.name}" dari daftar produk?`);
+      if (!confirmed) return;
+
+      state.products = state.products.filter(p => p.id !== productId);
+      saveProducts();
+      renderAdminDashboard();
+      renderProducts();
+      showToast('Produk dihapus.');
+    }
+
+    // ADMIN SETTINGS: QRIS UPLOAD & WHATSAPP NUMBER
+    function updateSettingsUI() {
+      const wa = state.settings.whatsappNumber || '6281234567890';
+      document.getElementById('footerWaDisplay').textContent = wa;
+      const adminWaInput = document.getElementById('adminWaInput');
+      if (adminWaInput) adminWaInput.value = wa;
+
+      const qrisImg = document.getElementById('adminQrisPreview');
+      const qrisEmpty = document.getElementById('adminQrisEmpty');
+      const removeBtn = document.getElementById('removeQrisBtn');
+
+      if (state.settings.qrisImageBase64) {
+        qrisImg.src = state.settings.qrisImageBase64;
+        qrisImg.classList.remove('hidden');
+        qrisEmpty.classList.add('hidden');
+        removeBtn.classList.remove('hidden');
+      } else {
+        qrisImg.classList.add('hidden');
+        qrisEmpty.classList.remove('hidden');
+        removeBtn.classList.add('hidden');
+      }
+    }
+
+    function handleQrisUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 4 * 1024 * 1024) {
+        showToast('Ukuran gambar QRIS maksimal 4MB.', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        state.settings.qrisImageBase64 = e.target.result;
+        saveSettings();
+        updateSettingsUI();
+        showToast('Gambar QRIS resmi toko berhasil disimpan!');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function removeQrisImage() {
+      const confirmed = await showConfirmDialog('Hapus Gambar QRIS?', 'Gambar QRIS tidak akan tampil di halaman checkout sampai Anda mengunggah yang baru.');
+      if (!confirmed) return;
+      state.settings.qrisImageBase64 = '';
+      saveSettings();
+      updateSettingsUI();
+      showToast('Gambar QRIS dihapus.');
+    }
+
+    function saveWhatsAppSetting() {
+      let wa = document.getElementById('adminWaInput').value.trim().replace(/[^0-9]/g, '');
+      if (!wa) {
+        showToast('Nomor WhatsApp tidak valid.', 'error');
+        return;
+      }
+      if (wa.startsWith('0')) {
+        wa = '62' + wa.slice(1);
+      }
+      state.settings.whatsappNumber = wa;
+      saveSettings();
+      updateSettingsUI();
+      showToast(`Nomor WhatsApp diperbarui ke ${wa}!`);
+    }
+
+    // SUPABASE CONFIGURATION
+    async function saveSupabaseConfig() {
+      const url = document.getElementById('sbUrlInput').value.trim();
+      const anonKey = document.getElementById('sbAnonInput').value.trim();
+
+      if (!url || !anonKey) {
+        showToast('Masukkan SUPABASE_URL dan SUPABASE_ANON_KEY.', 'error');
+        return;
+      }
+
+      try {
+        localStorage.setItem(STORAGE_KEYS.SB_CONFIG, JSON.stringify({ url, anonKey }));
+        state.supabaseClient = window.supabase.createClient(url, anonKey);
+        await loadAllData();
+        renderAdminDashboard();
+        showToast('Konfigurasi Supabase disimpan & terhubung!');
+      } catch (err) {
+        showToast('Gagal menghubungkan Supabase: ' + err.message, 'error');
+      }
+    }
+
+    function disconnectSupabase() {
+      localStorage.removeItem(STORAGE_KEYS.SB_CONFIG);
+      state.supabaseClient = null;
+      document.getElementById('sbUrlInput').value = '';
+      document.getElementById('sbAnonInput').value = '';
+      renderAdminDashboard();
+      showToast('Koneksi Supabase di-reset ke mode penyimpanan lokal.');
+    }
+
+    function copySqlSchema() {
+      const sqlText = document.getElementById('supabaseSqlCode').textContent;
+      const temp = document.createElement('textarea');
+      temp.value = sqlText;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      showToast('Skrip SQL Supabase berhasil disalin!');
+    }
+  </script>
+</body>
+</html>
